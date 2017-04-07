@@ -18,7 +18,6 @@ defmodule Amnesix.Mixfile do
 
   defp deps do
     [{:brod, "~> 2.2"},
-     {:simpler, git: "git@github.com:cdegroot/simpler"},
-     {:excoveralls, "~> 0.6", only: :test}]
+     {:simpler, in_umbrella: true}]
   end
 end
