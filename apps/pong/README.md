@@ -1,19 +1,7 @@
 # Pong
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `pong` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [{:pong, "~> 0.1.0"}]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/pong](https://hexdocs.pm/pong).
+This is a Pong implementation which is not going to shock the
+world, but rather serves a very basic test of the ECS
+library. As such, it is horribly overdesigned and just as
+complete as the library testing requires.
 

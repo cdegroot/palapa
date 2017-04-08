@@ -74,7 +74,6 @@ defmodule ECS.Systems.SimplePhysicsSystem do
   def do_collission(subject, object) do
     # Note that we play stupid here - we're fetching data we had before, but
     # as we're going parallel per task it's not too bad and the code is cleaner.
-    IO.puts("#{inspect subject} and #{inspect object} say boom!")
 
     # The source must be collider: position, collider, velocity
     [subject_collider, subject_position, subject_velocity] =

@@ -27,6 +27,9 @@ defmodule Pong.Wall do
   def upper(registry), do: new(registry, 0)
   def lower(registry), do: new(registry, @field_height - RenderComponent.height())
 
+  @doc "Returns true if the position refers to the upper wall"
+  def upper?(pos), do: pos.y == 0
+
   def new(registry, y) do
     Entity.new([
         PositionComponent.new([x: 0, y: y]),
