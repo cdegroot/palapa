@@ -7,7 +7,7 @@ defmodule Amnesix.WorkersSupervisor do
 
   defmodule State, do: defstruct [:persister_mod, :persister_pid, :router_state,
                                   :partition_count]
-  alias Amnesix.{RoutingSupervisor, PartitionWorker}
+  alias Amnesix.RoutingSupervisor
 
   use GenServer
 

@@ -11,8 +11,6 @@ defmodule Amnesix.BrodConsumer do
   require Logger
   require Record
 
-  alias Amnesix.WorkersSupervisor
-
   @client_name     :work_consumer
   @group_name      "amnesix_work_consumer" # Do we need this to be configgable?
   @group_config    [offset_commit_policy: :commit_to_kafka_v2,

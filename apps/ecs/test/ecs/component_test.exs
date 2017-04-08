@@ -1,5 +1,5 @@
 defmodule ComponentTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias ECS.Component
   alias ECS.Components.PositionComponent
 

@@ -1,5 +1,5 @@
 defmodule VelocityComponentTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias ECS.Entity
   alias ECS.Components.{PositionComponent, VelocityComponent}
 

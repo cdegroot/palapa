@@ -22,7 +22,7 @@ defmodule Amnesix.RoutingSupervisorTest do
     {:ok, pid_again, router_state} = RoutingSupervisor.pid_of(router_state, "my key")
     assert pid == pid_again
 
-    {:ok, another_pid, router_state} = RoutingSupervisor.pid_of(router_state, "another key")
+    {:ok, another_pid, _router_state} = RoutingSupervisor.pid_of(router_state, "another key")
     assert pid != another_pid
 
     # Test that the state is ok.

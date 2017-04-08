@@ -1,5 +1,5 @@
 defmodule EntityTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias ECS.Components.PositionComponent
   alias ECS.Entity
 

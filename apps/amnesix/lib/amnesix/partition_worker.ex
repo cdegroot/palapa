@@ -25,7 +25,7 @@ defmodule Amnesix.PartitionWorker do
   #     - ack message
 
   use GenServer
-  alias Amnesix.{RoutingSupervisor, KeyWorker}
+  alias Amnesix.RoutingSupervisor
 
   def start_link(persister = {_mod, _pid}, worker_module) do
     GenServer.start_link(__MODULE__, {persister, worker_module})

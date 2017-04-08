@@ -12,3 +12,10 @@ end
 
 import_config "../apps/*/config/config.exs"
 
+# Umbrella-wide overrised
+
+if Mix.env == :test do
+
+  config :logger, level: :warn
+
+end

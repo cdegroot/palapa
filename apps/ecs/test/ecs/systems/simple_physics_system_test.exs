@@ -1,5 +1,5 @@
 defmodule SimplePhysicsSystemTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias ECS.Entity
   alias ECS.Components.{PositionComponent, CollidableComponent, ColliderComponent}
   alias ECS.Systems.SimplePhysicsSystem

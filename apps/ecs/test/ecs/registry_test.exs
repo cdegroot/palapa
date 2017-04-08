@@ -1,5 +1,5 @@
 defmodule RegistryTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias ECS.{Entity, Registry}
   alias ECS.Components.PositionComponent
 
