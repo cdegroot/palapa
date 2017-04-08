@@ -121,11 +121,10 @@ defmodule Amnesix.BrodConsumer do
 
   # Unused (for now) brod_group_member callbacks
   def assign_partitions(_pid, _members, _topic_partitions) do
-    Logger.error("Unexpected assign_partitions call!")
-    :error
+    raise("Unexpected assign_partitions call!")
   end
   def get_committed_offsets(_pid, _topic_partitions) do
-    Logger.error("Unexpected get_committed_offsets call!")
+    raise("Unexpected get_committed_offsets call!")
   end
 
   # Private stuff

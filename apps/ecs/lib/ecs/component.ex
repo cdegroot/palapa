@@ -12,7 +12,7 @@ defmodule ECS.Component do
       def new do
         struct(unquote(__CALLER__.module))
       end
-      @spec new([atom: any]) :: %unquote(__CALLER__.module){}
+      @spec new(Enum.t) :: %unquote(__CALLER__.module){}
       def new(args) do
         struct(unquote(__CALLER__.module), args)
       end

@@ -31,7 +31,7 @@ defmodule ECS.Components.VelocityComponent do
     y = position.y + velocity.vy
 
     nz = if position.z == nil, do: nil, else: position.z + velocity.vz
-    # For testing, wrap around until we have collissions and bouncy stuff done.
+    # TODO For testing, wrap around until we have collissions and bouncy stuff done.
     nx = if x > 4000, do: 0, else: x
     ny = if y > 3000, do: 0, else: y
     PositionComponent.move_to(entity_pid, nx, ny, nz)

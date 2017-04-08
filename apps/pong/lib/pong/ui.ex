@@ -47,8 +47,8 @@ defmodule Pong.UI do
   end
 
   # Tempting to have a run-time-updatable game ;-)
-  def code_change(_, _, state) do
-    {:stop, :not_implemented, state}
+  def code_change(_, _, _) do
+    {:error, :not_implemented}
   end
 
   def handle_info(:stop, state) do
