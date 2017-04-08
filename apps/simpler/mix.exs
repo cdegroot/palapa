@@ -1,4 +1,4 @@
-defmodule ElixirTesting.Mixfile do
+defmodule Simpler.Mixfile do
   use Mix.Project
 
   def project do
@@ -7,8 +7,10 @@ defmodule ElixirTesting.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     test_coverage: [tool: ExCoveralls],
-     preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
+     build_path: "../../_build",
+     config_path: "../../config/config.exs",
+     deps_path: "../../deps",
+     lockfile: "../../mix.lock",
      deps: deps()]
   end
 

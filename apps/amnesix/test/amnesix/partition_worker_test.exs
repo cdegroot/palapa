@@ -4,7 +4,6 @@ defmodule Amnesix.PartitionWorkerTest do
   alias Amnesix.PartitionWorker
 
   defmodule MockPersister do
-    @behaviour Amnesix.Persister
     def persist(pid, key, data) do
       flunk "Unexpected call persist(#{inspect pid}, #{inspect key}, #{inspect data})"
     end
@@ -21,7 +20,6 @@ defmodule Amnesix.PartitionWorkerTest do
 
   defmodule StubKeyWorker do
     use GenServer
-    @behaviour Amnesix.KeyWorker.Behaviour
     def start_link([persister], key) do
       GenServer.start_link(__MODULE__, {persister, key})
     end
@@ -42,12 +40,11 @@ defmodule Amnesix.PartitionWorkerTest do
 
   test "load routes the key/value to the correct worker" do
     persister = {MockPersister, self()}
-    {:ok, partition_worker} = PartitionWorker.Behaviour.start_link(PartitionWorker.Implementation,
-      {persister, StubKeyWorker})
+    {:ok, partition_worker} = PartitionWorker.start_link(persister, StubKeyWorker)
 
-    :ok = PartitionWorker.Behaviour.load(partition_worker, "a key", "some initial state")
-    :ok = PartitionWorker.Behaviour.load(partition_worker, "another key", "another state")
-    :ok = PartitionWorker.Behaviour.load(partition_worker, "a key", "a state, again!")
+    :ok = PartitionWorker.load(partition_worker, "a key", "some initial state")
+    :ok = PartitionWorker.load(partition_worker, "another key", "another state")
+    :ok = PartitionWorker.load(partition_worker, "a key", "a state, again!")
 
     assert_received {:kw, "a key", {:load_state, "some initial state"}}
     assert_received {:kw, "another key", {:load_state, "another state"}}
@@ -56,15 +53,14 @@ defmodule Amnesix.PartitionWorkerTest do
 
   test "complete_load is forwarded to all workers" do
     persister = {MockPersister, self()}
-    {:ok, partition_worker} = PartitionWorker.Behaviour.start_link(PartitionWorker.Implementation,
-      {persister, StubKeyWorker})
+    {:ok, partition_worker} = PartitionWorker.start_link(persister, StubKeyWorker)
 
     # Kick two workers into action
-    :ok = PartitionWorker.Behaviour.load(partition_worker, "a key", "some initial state")
-    :ok = PartitionWorker.Behaviour.load(partition_worker, "another key", "another state")
+    :ok = PartitionWorker.load(partition_worker, "a key", "some initial state")
+    :ok = PartitionWorker.load(partition_worker, "another key", "another state")
 
     # Send the message
-    :ok = PartitionWorker.Behaviour.complete_load(partition_worker)
+    :ok = PartitionWorker.complete_load(partition_worker)
 
     assert_received {:kw, "a key", :initialization_done}
     assert_received {:kw, "another key", :initialization_done}
@@ -72,10 +68,9 @@ defmodule Amnesix.PartitionWorkerTest do
 
   test "process message is forwarded to the correct worker" do
     persister = {MockPersister, self()}
-    {:ok, partition_worker} = PartitionWorker.Behaviour.start_link(PartitionWorker.Implementation,
-      {persister, StubKeyWorker})
+    {:ok, partition_worker} = PartitionWorker.start_link(persister, StubKeyWorker)
 
-    :ok = PartitionWorker.Behaviour.process_message(partition_worker, "a key", "a value")
+    :ok = PartitionWorker.process_message(partition_worker, "a key", "a value")
 
     assert_received {:kw, "a key", {:schedule_work, "a value"}}
   end

@@ -1,10 +1,9 @@
 defmodule Amnesix.WorkersSupervisorTest do
   use ExUnit.Case, async: true
 
-  alias Amnesix.{WorkersSupervisor, Persister}
+  alias Amnesix.WorkersSupervisor
 
   defmodule MockPersister do
-    @behaviour Persister
     def persist(_pid, _key, _data) do
       :ok
     end
@@ -23,7 +22,6 @@ defmodule Amnesix.WorkersSupervisorTest do
   end
   defmodule StubPartitionWorker do
     use GenServer
-    @behaviour Amnesix.PartitionWorker.Behaviour
     def start_link([persister, partitions], partition) do
       GenServer.start_link(__MODULE__, {persister, partitions, partition})
     end
@@ -47,10 +45,9 @@ defmodule Amnesix.WorkersSupervisorTest do
   test "New setup calls load and complete_load on all partitions" do
     persister = {MockPersister, self()}
 
-    {:ok, workers_supervisor} = WorkersSupervisor.Behaviour.start_link(
-      WorkersSupervisor.Implementation, {persister, StubPartitionWorker})
+    {:ok, workers_supervisor} = WorkersSupervisor.start_link(persister, StubPartitionWorker)
 
-    WorkersSupervisor.Behaviour.load_partitions(workers_supervisor, [0, 1])
+    WorkersSupervisor.load_partitions(workers_supervisor, [0, 1])
 
     assert_received {:pw, 0, {:load, "key two", "value two"}}
     assert_received {:pw, 1, {:load, "key one", "value one"}}
@@ -61,12 +58,11 @@ defmodule Amnesix.WorkersSupervisorTest do
   test "When process_message is called, the correct worker gets a message" do
     persister = {MockPersister, self()}
 
-    {:ok, workers_supervisor} = WorkersSupervisor.Behaviour.start_link(
-      WorkersSupervisor.Implementation, {persister, StubPartitionWorker})
+    {:ok, workers_supervisor} = WorkersSupervisor.start_link(persister, StubPartitionWorker)
 
     # Note that we have the partition here, so whatever the partition is, a
     # worker will be created and receive the message
-    WorkersSupervisor.Behaviour.process_message(workers_supervisor, 42, "key", "val")
+    WorkersSupervisor.process_message(workers_supervisor, 42, "key", "val")
 
     assert_received {:pw, 42, {:process_message, "key", "val"}}
   end

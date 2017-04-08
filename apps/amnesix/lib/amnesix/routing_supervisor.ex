@@ -10,8 +10,9 @@ defmodule Amnesix.RoutingSupervisor do
   @doc """
   Setup the routing supervisor with the indicated `spec` as a worker or
   supervisor spec to use. If `behaviour_module` not is nil, then it's
-  interpreted as a `Simpler.Interface` style module and return values
-  will not be naked pids but `{module, pid}` tuples.
+  interpreted as an interface style module and return values
+  will not be naked pids but `{behaviour_module, pid}` tuples. This can
+  be used for unit testing, making behaviour pluggable, etcetera.
   """
   def setup(spec, behaviour_module \\ nil) do
     {:ok, pid} = Supervisor.start_link([spec], strategy: :simple_one_for_one)

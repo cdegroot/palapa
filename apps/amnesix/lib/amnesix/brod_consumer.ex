@@ -22,10 +22,10 @@ defmodule Amnesix.BrodConsumer do
 
   # I'm still not sure that this is actually useful...
   Record.defrecord :kafka_message_set, Record.extract(:kafka_message_set,
-                                                     from: "deps/brod/include/brod.hrl")
+                                                     from_lib: "brod/include/brod.hrl")
 
   defmodule State do
-    defstruct [:brokers, :topic, :coordinator, :workers_supervisor,
+    defstruct [:brokers, :topic, :coordinator, :ws_mod, :ws_pid,
                :consumers, :generation_id]
   end
 
@@ -34,7 +34,7 @@ defmodule Amnesix.BrodConsumer do
   that is responsible for setting up a worker hierarchy for the assigned
   partitions.
   """
-  def start_link(workers_supervisor) do
+  def start_link(workers_supervisor = {_module, _pid}) do
     brokers = Application.get_env(:amnesix, :brokers)
     work_topic = Application.get_env(:amnesix, :work_topic)
     GenServer.start_link(__MODULE__, {brokers, work_topic, workers_supervisor})
@@ -42,19 +42,18 @@ defmodule Amnesix.BrodConsumer do
 
   # GenServer callbacks
 
-  def init({brokers, topic, workers_supervisor}) do
+  def init({brokers, topic, _workers_supervisor = {ws_mod, ws_pid}}) do
     :ok = :brod.start_client(brokers, @client_name, [])
     {:ok, pid} = :brod_group_coordinator.start_link(
       @client_name, @group_name, [topic], @group_config,
       __MODULE__, self())
     state = %State{brokers: brokers, topic: topic, coordinator: pid,
-                   workers_supervisor: workers_supervisor,
-                  consumers: []}
+                   ws_mod: ws_mod, ws_pid: ws_pid, consumers: []}
     {:ok, state}
   end
 
   def handle_call({:assignments_revoked}, _from, state) do
-    WorkersSupervisor.Behaviour.remove_partitions(state.workers_supervisor)
+    state.ws_mod.remove_partitions(state.ws_pid)
     {:reply, :ok, state}
   end
 
@@ -66,7 +65,7 @@ defmodule Amnesix.BrodConsumer do
     # TODO do we need to have a consumer config? ---------v
     :ok = :brod.start_consumer(@client_name, state.topic, [])
     partitions = for {partition, _offset} <- partition_offsets, do: partition
-    WorkersSupervisor.Behaviour.load_partitions(state.workers_supervisor, partitions)
+    state.ws_mod.load_partitions(state.ws_pid, partitions)
     # Subscribe to all the partitions.
     consumers = partition_offsets
     |> subscribe_consumers(state.topic, state.consumers)
@@ -97,7 +96,7 @@ defmodule Amnesix.BrodConsumer do
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     Logger.info("Brod consumer down pid = #{inspect pid}")
-    {partition, _} = Enum.find(state.consumers, fn({k, v}) -> v == pid end)
+    {partition, _} = Enum.find(state.consumers, fn({_k, v}) -> v == pid end)
     consumers = Map.delete(state.consumers, partition)
     # TODO what now? brod_group_subscriber basically just marks a consumer as down...
     {:noreply, %State{state | consumers: consumers}}
@@ -148,7 +147,7 @@ defmodule Amnesix.BrodConsumer do
   end
 
   defp process_message(partition, key, value, state) do
-    :ok = WorkersSupervisor.Behaviour.process_message(state.workers_supervisor, partition, key, value)
+    :ok = state.ws_mod.process_message(state.ws_pid, partition, key, value)
   end
 
 end

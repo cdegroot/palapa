@@ -5,7 +5,6 @@ defmodule Amnesix.BrodConsumerTest do
   alias Amnesix.BrodConsumer
 
   defmodule MockWorkersSupervisor do
-    @behaviour Amnesix.WorkersSupervisor.Behaviour
     def load_partitions(pid, partitions) do
       send(pid, {:load, partitions})
       []

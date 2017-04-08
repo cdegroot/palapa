@@ -28,7 +28,7 @@ defmodule Simpler.Mock do
     # TODO mucho cleanups, splitting
     caller_mod = __CALLER__.module
     {caller_fun, _arity} = __CALLER__.function
-    random_module_name = Integer.to_string(:random.uniform(100000000000))
+    random_module_name = Integer.to_string(:rand.uniform(100000000000))
     mock_module = Module.concat([caller_mod, caller_fun, random_module_name])
     result = statements(opts[:do])
     |> Enum.map(fn({:expect_call, _, expectation}) ->
@@ -41,8 +41,8 @@ defmodule Simpler.Mock do
       end
       {expectation, forwarder}
     end)
-    expectations = Enum.map(result, fn({e, f}) -> e end)
-    forwarders = Enum.map(result, fn({e, f}) -> f end)
+    expectations = Enum.map(result, fn({e, _f}) -> e end)
+    forwarders = Enum.map(result, fn({_e, f}) -> f end)
     forwarders = forwarders |> Macro.escape
     quote do
       {:ok, pid} = Simpler.Mock.Server.start_link()

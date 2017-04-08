@@ -2,7 +2,6 @@ defmodule Amnesix.KafkaPersister do
   @moduledoc """
   Module that persists worker states using Kafka compacted topics
   """
-  @behaviour Amnesix.Persister
 
   # TODO make all this configurable
   @client_name :amnesix_journal_client
