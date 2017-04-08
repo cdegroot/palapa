@@ -29,9 +29,7 @@ defined in a module named `VelocityComponent`), and then calls
 `VelocityComponent.tick` on them. The tick method will then update
 the entity's `:position` component to the new position per the
 velocity. Although currently the ticks are called synchronously it is
-not hard to see how this can be ran in parallel; similarly, the `Registry`
-module, which currently is a simple GenServer managing a Map, can easily
-be rewritten to use an ETS table for more performance.
+not hard to see how this can be ran in parallel.
 
 Overall, I think that the high level design leverages Erlang processes
 quite well. Currently, I'm finalizing a Pong implementation to see how this

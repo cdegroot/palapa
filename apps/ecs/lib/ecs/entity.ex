@@ -98,13 +98,13 @@ defmodule ECS.Entity do
   end
 
   defp maybe_register_component(%{registry: registry}, component_name) do
-    Registry.register_component(registry.value, self(), component_name)
+    Registry.register_component(registry.value, component_name)
   end
   defp maybe_register_component(_state, _component_name) do
   end
 
   defp maybe_unregister_component(%{registry: registry}, component_name) do
-    Registry.unregister_component(registry.value, self(), component_name)
+    Registry.unregister_component(registry.value, component_name)
   end
   defp maybe_unregister_component(_state, _component_name) do
   end

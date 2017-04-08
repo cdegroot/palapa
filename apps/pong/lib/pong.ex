@@ -11,7 +11,7 @@ defmodule Pong do
   use Application
 
   def start(_, _) do
-    {:ok, registry} = ECS.Registry.new
+    {:ok, registry} = ECS.Registry.new(:pong)
     build_objects(registry)
   end
 
