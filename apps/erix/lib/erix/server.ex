@@ -9,13 +9,14 @@ defmodule Erix.Server do
 
   defmodule Candidate do
     defstruct election_start: 0,
-      votes: []
+      vote_count: 0
   end
   defmodule State do
     defstruct state: nil,
       persistence_mod: nil, persistence_pid: nil,
       current_term: 0,
-      voted_for: nil,
+      peers: [],
+      voted_for: nil, # TODO here?
       log: [],
       current_time: -1,
       last_heartbeat_seen: -1,
@@ -26,8 +27,19 @@ defmodule Erix.Server do
     GenServer.start_link(__MODULE__, {persistence_ref})
   end
 
+  @doc "Execute a tick."
   def tick(pid) do
     GenServer.cast(pid, :tick)
+  end
+
+  @doc "Add a peer server"
+  def add_peer(pid, peer_pid) do
+    GenServer.cast(pid, {:add_peer, peer_pid})
+  end
+
+  @doc "Reply on a RequestVote RPC"
+  def reply_vote(pid, term, vote_granted) do
+    GenServer.cast(pid, {:reply_vote, term, vote_granted})
   end
 
   # Mostly test helpers that dig around in state
@@ -71,6 +83,7 @@ defmodule Erix.Server do
     {:ok, state}
   end
 
+  # Testing support stuff
   def handle_call(:__fortest__getstate, _from, state) do
     {:reply, state, state}
   end
@@ -84,6 +97,20 @@ defmodule Erix.Server do
     {:noreply, state}
   end
 
+  def handle_cast({:add_peer, peer_pid}, state) do
+    {:noreply, %{state | peers: [peer_pid | state.peers]}}
+  end
+
+  # General state-forwarding calls.
+  #def handle_call(msg, _from, state) do
+    #handle_call(state.state, msg, _from, state)
+  #end
+  def handle_cast(msg, state) do
+    handle_cast(state.state, msg, state)
+  end
+
+  # Follower implementation
+
   defp handle_tick(:follower, state) do
     Logger.debug("tick time=#{state.current_time} lhbs=#{state.last_heartbeat_seen}")
     if state.current_time - state.last_heartbeat_seen > @election_timeout_ticks do
@@ -93,12 +120,37 @@ defmodule Erix.Server do
     end
   end
 
-  deft transition(:follower, :candidate, state) do
-    candidate_state = %Candidate{election_start: state.current_time, votes: [self()]}
+  defp transition(:follower, :candidate, state) do
+    candidate_state = %Candidate{election_start: state.current_time, vote_count: 1}
     state = %{state | state: :candidate,
       current_term: state.current_term + 1,
       current_state_data: candidate_state}
+    state.peers
+    |> Enum.map(fn({mod, pid}) ->
+      # TODO: the fourth argument is incorrect.
+      mod.request_vote(pid, state.current_term, self(), length(state.log), 0)
+    end)
+    state
   end
+
+  # Candidate implementation
+
+  def handle_cast(:candidate, {:reply_vote, term, _vote_granted = true}, state) do
+    vote_count = state.current_state_data.vote_count + 1
+    peer_count = length(state.peers)
+    new_state = if vote_count / peer_count > 0.5 do
+      transition(:candidate, :leader, state)
+    else
+      %{state | current_state_data: %{state.current_state_data | vote_count: vote_count}}
+    end
+    {:noreply, new_state}
+  end
+
+  defp transition(:candidate, :leader, state) do
+    %{state | state: :leader}
+  end
+
+  # Helper stuff
 
   defp read_from_persistence(state) do
     if state.persistence_mod != nil do

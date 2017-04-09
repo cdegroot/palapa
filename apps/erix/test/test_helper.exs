@@ -8,7 +8,7 @@ defmodule ServerMaker do
     server
   end
   def new_primed_for_candidate do
-    server = new_follower
+    server = new_follower()
     for _ <- 1..@election_timeout_ticks, do: Erix.Server.tick(server)
     server
   end
