@@ -17,7 +17,7 @@ defmodule Erix.RulesForFollowersTest do
 
     assert Erix.Server.__fortest__getstate(server).state == :follower
 
-    for _ <- 0..@election_timeout_ticks do
+    for _ <- 0..@heartbeat_timeout_ticks do
       Erix.Server.tick(server)
     end
 

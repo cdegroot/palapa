@@ -7,7 +7,7 @@ defmodule Erix.Server.Follower do
   @behaviour Erix.Server
 
   def handle_tick(state) do
-    if state.current_time - state.last_heartbeat_seen > @election_timeout_ticks do
+    if state.current_time - state.last_heartbeat_seen > @heartbeat_timeout_ticks do
       target = Erix.Server.state_module(:candidate)
       target.transition_from(:follower, state)
     else

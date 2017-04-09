@@ -64,6 +64,11 @@ defmodule Erix.RulesForCandidatesTest do
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
+  end
+
+  test "If an election timeout elapses, a new election is started" do
+    server = ServerMaker.new_candidate()
+
 
   end
 end
