@@ -18,7 +18,7 @@ defmodule Erix.RulesForCandidatesTest do
   test "A new candidate starts an election" do
     server = ServerMaker.new_primed_for_candidate()
     {:ok, follower} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, server, 0, 0), reply: {1, true}
+      expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
     end
     Erix.Server.add_peer(server, follower)
 
@@ -68,7 +68,21 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "If an election timeout elapses, a new election is started" do
     server = ServerMaker.new_candidate()
+    {:ok, follower} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
+      expect_call request_vote(_pid, 2, server, 0, 0), reply: :ok
+    end
+    Erix.Server.add_peer(server, follower)
 
+    for _ <- 0..@election_timeout_ticks do
+      Erix.Server.tick(server)
+    end
 
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.state == :candidate
+    # TODO assert new term
+    # TODO assert new election start time
+
+    # TODO verify
   end
 end
