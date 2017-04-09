@@ -7,10 +7,6 @@ defmodule Erix.Server do
   import Simpler.TestSupport
   require Logger
 
-  defmodule Candidate do
-    defstruct election_start: 0,
-      vote_count: 0
-  end
   defmodule State do
     defstruct state: nil,
       persistence_mod: nil, persistence_pid: nil,
@@ -27,6 +23,11 @@ defmodule Erix.Server do
     GenServer.start_link(__MODULE__, {persistence_ref})
   end
 
+  @doc "Given a state tag, return the module implementing it"
+  def state_module(state_tag) do
+    Module.concat(__MODULE__, Macro.camelize(Atom.to_string(state_tag)))
+  end
+
   @doc "Execute a tick."
   def tick(pid) do
     GenServer.cast(pid, :tick)
@@ -38,8 +39,14 @@ defmodule Erix.Server do
   end
 
   @doc "Reply on a RequestVote RPC"
-  def reply_vote(pid, term, vote_granted) do
-    GenServer.cast(pid, {:reply_vote, term, vote_granted})
+  def vote_reply(pid, term, vote_granted) do
+    GenServer.cast(pid, {:vote_reply, term, vote_granted})
+  end
+
+  @doc "Receive an AppendEntries RPC"
+  def append_entries(pid, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit) do
+    GenServer.call(pid, {:append_entries, term, leader_id, prev_log_index, prev_log_term,
+                         entries, leader_commit})
   end
 
   # Mostly test helpers that dig around in state
@@ -91,63 +98,37 @@ defmodule Erix.Server do
     {:noreply, state}
   end
 
-  def handle_cast(:tick, state) do
-    state = %{state | current_time: state.current_time + 1}
-    state = handle_tick(state.state, state)
-    {:noreply, state}
-  end
 
   def handle_cast({:add_peer, peer_pid}, state) do
     {:noreply, %{state | peers: [peer_pid | state.peers]}}
   end
 
-  # General state-forwarding calls.
-  #def handle_call(msg, _from, state) do
-    #handle_call(state.state, msg, _from, state)
-  #end
-  def handle_cast(msg, state) do
-    handle_cast(state.state, msg, state)
+  # State-forwarding calls.
+
+  @callback handle_tick(state :: %State{}) :: %State{}
+
+  def handle_cast(:tick, state) do
+    state = %{state | current_time: state.current_time + 1}
+    mod = state_module(state.state)
+    {:noreply, mod.handle_tick(state)}
   end
 
-  # Follower implementation
+  @callback vote_reply(state :: %State{}) :: %State{}
 
-  defp handle_tick(:follower, state) do
-    Logger.debug("tick time=#{state.current_time} lhbs=#{state.last_heartbeat_seen}")
-    if state.current_time - state.last_heartbeat_seen > @election_timeout_ticks do
-      transition(:follower, :candidate, state)
-    else
-      state
-    end
+  def handle_cast({:vote_reply, term, vote_granted}, state) do
+    mod = state_module(state.state)
+    {:noreply, mod.vote_reply(term, vote_granted, state)}
   end
 
-  defp transition(:follower, :candidate, state) do
-    candidate_state = %Candidate{election_start: state.current_time, vote_count: 1}
-    state = %{state | state: :candidate,
-      current_term: state.current_term + 1,
-      current_state_data: candidate_state}
-    state.peers
-    |> Enum.map(fn({mod, pid}) ->
-      # TODO: the fourth argument is incorrect.
-      mod.request_vote(pid, state.current_term, self(), length(state.log), 0)
-    end)
-    state
-  end
+  @type append_entries_reply :: {term :: integer, success :: boolean}
+  @callback append_entries(term :: integer, leader_id :: pid, prev_log_index :: integer,
+    prev_log_term :: integer, entries :: list(), leader_commit :: integer,
+    state :: %State{}) :: {append_entries_reply, %State{}}
 
-  # Candidate implementation
-
-  def handle_cast(:candidate, {:reply_vote, term, _vote_granted = true}, state) do
-    vote_count = state.current_state_data.vote_count + 1
-    peer_count = length(state.peers)
-    new_state = if vote_count / peer_count > 0.5 do
-      transition(:candidate, :leader, state)
-    else
-      %{state | current_state_data: %{state.current_state_data | vote_count: vote_count}}
-    end
-    {:noreply, new_state}
-  end
-
-  defp transition(:candidate, :leader, state) do
-    %{state | state: :leader}
+  def handle_call({:append_entries, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit}, _from, state) do
+    mod = state_module(state.state)
+    {reply, state} = mod.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
+    {:reply, reply, state}
   end
 
   # Helper stuff

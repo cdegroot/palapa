@@ -12,4 +12,9 @@ defmodule ServerMaker do
     for _ <- 1..@election_timeout_ticks, do: Erix.Server.tick(server)
     server
   end
+  def new_candidate do
+    server = new_primed_for_candidate()
+    Erix.Server.tick(server)
+    server
+  end
 end

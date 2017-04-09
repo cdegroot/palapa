@@ -49,11 +49,21 @@ defmodule Erix.RulesForCandidatesTest do
     Erix.Server.tick(server)
 
     # Have one of the followers respond with a positive vote
-    Erix.Server.reply_vote(server, 1, true)
+    Erix.Server.vote_reply(server, 1, true)
 
     # One of the followers voted, plus the self-vote, which means we
     # should now be a leader
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :leader
+  end
+
+  test "Candidate that receives AppendEntries becomes a follower" do
+    server = ServerMaker.new_candidate()
+
+    Erix.Server.append_entries(server, 1, self(), 0, 0, [], 0)
+
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.state == :follower
+
   end
 end
