@@ -105,12 +105,12 @@ defmodule Erix.Server do
 
   # State-forwarding calls.
 
-  @callback handle_tick(state :: %State{}) :: %State{}
+  @callback tick(state :: %State{}) :: %State{}
 
   def handle_cast(:tick, state) do
     state = %{state | current_time: state.current_time + 1}
     mod = state_module(state.state)
-    {:noreply, mod.handle_tick(state)}
+    {:noreply, mod.tick(state)}
   end
 
   @callback vote_reply(state :: %State{}) :: %State{}

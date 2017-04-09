@@ -11,6 +11,16 @@ defmodule Erix.Server.Candidate do
       vote_count: 0
   end
 
+
+  def tick(state) do
+    if state.current_time - state.current_state_data.election_start > @election_timeout_ticks do
+      # Trigger a new election by transitioning again into candidate state
+      transition_from(:candidate, state)
+    else
+      state
+    end
+  end
+
   @doc "Become a candidate"
   def transition_from(_, state) do
     candidate_state = %State{election_start: state.current_time, vote_count: 1}

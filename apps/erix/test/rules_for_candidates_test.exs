@@ -1,6 +1,7 @@
 defmodule Erix.RulesForCandidatesTest do
   use ExUnit.Case, async: true
   use Simpler.Mock
+  use Erix.Constants
 
   @moduledoc """
   Candidates (§5.2):
@@ -69,10 +70,13 @@ defmodule Erix.RulesForCandidatesTest do
   test "If an election timeout elapses, a new election is started" do
     server = ServerMaker.new_candidate()
     {:ok, follower} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
+      # Expect the second vote request
       expect_call request_vote(_pid, 2, server, 0, 0), reply: :ok
     end
     Erix.Server.add_peer(server, follower)
+
+    state = Erix.Server.__fortest__getstate(server)
+    election_start = state.current_state_data.election_start
 
     for _ <- 0..@election_timeout_ticks do
       Erix.Server.tick(server)
@@ -80,9 +84,9 @@ defmodule Erix.RulesForCandidatesTest do
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :candidate
-    # TODO assert new term
-    # TODO assert new election start time
+    assert 2 == state.current_term
+    assert election_start < state.current_state_data.election_start
 
-    # TODO verify
+    Mock.verify(follower)
   end
 end
