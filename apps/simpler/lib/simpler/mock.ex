@@ -34,6 +34,7 @@ defmodule Simpler.Mock do
     |> Enum.map(fn({:expect_call, _, expectation}) ->
       message = call_to_message(expectation)
       {msg, args, _reply} = message
+      args = args || []
       forwarder = Simpler.Mock.Generator.make_forwarder({msg, length(args)}, quote do: @pid)
       message = message |> Macro.escape
       expectation = quote do

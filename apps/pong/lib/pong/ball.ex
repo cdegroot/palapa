@@ -36,14 +36,14 @@ defmodule Pong.Ball do
     # collide with wall
     def collission(_self, {self_id, _self_pos, self_vel},
       {_wall_id, nil, %{tag: :wall}, wall_pos, nil}) do
-      wall_norm = if Wall.upper?(wall_pos), do: {0, 1}, else: {0, -1}
+      wall_norm = if Pong.Wall.upper?(wall_pos), do: {0, 1}, else: {0, -1}
       bounce(self_id, self_vel, wall_norm)
     end
 
     # collide with paddle
     def collission(_self, {self_id, _self_pos, self_vel},
       {_paddle_id, nil, %{tag: :paddle}, paddle_pos, nil}) do
-      paddle_norm = if Paddle.left?(paddle_pos), do: {1, 0}, else: {-1, 0}
+      paddle_norm = if Pong.Paddle.left?(paddle_pos), do: {1, 0}, else: {-1, 0}
       bounce(self_id, self_vel, paddle_norm)
     end
 

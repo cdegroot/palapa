@@ -14,6 +14,8 @@
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], []},
   "mix_test_watch": {:hex, :mix_test_watch, "0.3.3", "70859889a8d1d43d1b75d69d87258a301f43209a17787cdb2bd9cab42adf271d", [:mix], [{:fs, "~> 2.12", [hex: :fs, optional: false]}]},
+  "rox": {:hex, :rox, "1.0.0", "9f754dcb4ace47f645968c4a7351cbcc317e71d3a2382363beb4ec06a7ecc473", [:mix], [{:rustler, "~> 0.9.0", [hex: :rustler, optional: false]}]},
+  "rustler": {:hex, :rustler, "0.9.0", "6fa87ac78f48f70aa8ecfb6e16b8af41c398989d33de41d292b5581d6a2eeb5a", [:mix], []},
   "snappyer": {:hex, :snappyer, "1.2.0", "4761f475c53fec4a027dc90ea0626a735e3d276bfcfaf9a8dc4c7bbda4d1e058", [:make, :rebar, :rebar3], []},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], []},
   "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], []},
