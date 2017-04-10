@@ -31,4 +31,41 @@ defmodule Erix.AppendEntriesRpcTest do
   5. If leaderCommit > commitIndex, set commitIndex =
      min(leaderCommit, index of last new entry)
   """
+  test "Reply false if append entries term is prior to our term" do
+    # We can test this just on the follower. Leaders should not receive
+    # AppendEntry and candidates will flip into follower mode before handling
+    # it.
+    state = %Erix.Server.State{current_term: 42}
+    {reply, _} = Erix.Server.Follower.append_entries(41, self(), 0, 0, [], 0, state)
+    assert reply == {42, false}
+  end
+
+  test "Reply false if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm" do
+    state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {41, "bar"}]}
+    {reply, _} = Erix.Server.Follower.append_entries(42, self(), 2, 42, [], 0, state)
+    assert reply == {42, false}
+  end
+
+  test "Rewrite log when an existing entry conflicts with a new one" do
+    state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {42, "bar"}, {43, "baz"}]}
+    {reply, state} = Erix.Server.Follower.append_entries(42, self(),
+      2,
+      42,
+      [{42, "mybaz"}, {42, "quux"}], # this log conflicts with {43, "baz"}
+      2, state)
+    assert reply == {42, true}
+    assert state.log == [{41, "foo"}, {42, "bar"}, {42, "mybaz"}, {42, "quux"}]
+  end
+
+  test "update commit_index is leader_commit > commit_index" do
+    state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {42, "bar"}, {42, "baz"}],
+                              commit_index: 2}
+    {reply, state} = Erix.Server.Follower.append_entries(42, self(),
+      3, 42, [{42, "mybaz"}, {42, "quux"}],
+      20,
+      state)
+    assert reply == {42, true}
+    assert state.log == [{41, "foo"}, {42, "bar"}, {42, "baz"}, {42, "mybaz"}, {42, "quux"}]
+    assert state.commit_index == 5
+  end
 end

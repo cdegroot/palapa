@@ -27,7 +27,21 @@ defmodule Erix.RulesForLeadersTest do
       expect_call append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
     end
     state = %Erix.Server.State{peers: [follower]}
-    new_state = Erix.Server.Leader.transition_from(:candidate, state)
+    Erix.Server.Leader.transition_from(:candidate, state)
+
+    Mock.verify(follower)
+  end
+
+  test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
+    {:ok, follower} = Mock.with_expectations do
+      expect_call append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
+    end
+    state = %Erix.Server.State{}
+    state = Erix.Server.Leader.transition_from(:candidate, state)
+
+    state = %{state | peers: [follower]}
+
+    Erix.Server.Leader.tick(state)
 
     Mock.verify(follower)
   end

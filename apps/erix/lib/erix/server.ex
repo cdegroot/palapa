@@ -7,13 +7,15 @@ defmodule Erix.Server do
   import Simpler.TestSupport
   require Logger
 
+  @type log_entry :: {term :: integer, entry :: any}
+
   defmodule State do
     defstruct state: nil,
       persistence_mod: nil, persistence_pid: nil,
       current_term: 0,
       peers: [],
       voted_for: nil, # TODO here?
-      log: [],
+      log: [], commit_index: 0, last_applied: 0,
       current_time: -1,
       last_heartbeat_seen: -1,
       current_state_data: nil
@@ -50,30 +52,6 @@ defmodule Erix.Server do
   end
 
   # Mostly test helpers that dig around in state
-
-  def current_term(_server) do
-    0
-  end
-
-  def voted_for(_server) do
-    nil
-  end
-
-  def log(_server) do
-    []
-  end
-
-  def commit_index(_server) do
-    0
-  end
-
-  def committed(_server) do
-    0
-  end
-
-  def last_applied(_server) do
-    0
-  end
 
   deft __fortest__getstate(pid) do
     GenServer.call(pid, :__fortest__getstate)

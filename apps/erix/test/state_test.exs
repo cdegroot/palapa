@@ -17,7 +17,7 @@ defmodule Erix.StateTest do
 
   Volatile state on all servers:
   commitIndex   index of highest log entry known to be
-  committed     (initialized to 0, increases
+                committed (initialized to 0, increases
                 monotonically)
   lastApplied   index of highest log entry applied to state
                 machine (initialized to 0, increases
@@ -45,17 +45,17 @@ defmodule Erix.StateTest do
 
     # Verify initial stable state - this must come from persistence
     # hence the expectations above we verify at the end of the test
-    assert Erix.Server.current_term(server) == 0
-    assert Erix.Server.voted_for(server) == nil
-    assert Erix.Server.log(server) == []
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.current_term == 0
+    assert state.voted_for == nil
+    assert state.log == []
 
     # Verify initial volatile state
-    assert Erix.Server.commit_index(server) == 0
-    assert Erix.Server.committed(server) == 0
-    assert Erix.Server.last_applied(server) == 0
+    assert state.commit_index == 0
+    assert state.last_applied == 0
 
     # Verify that the server is a follower
-    assert Erix.Server.__fortest__getstate(server).state == :follower
+    assert state.state == :follower
 
     Mock.verify(server_persistence)
   end
