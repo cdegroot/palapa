@@ -15,7 +15,8 @@ defmodule Erix.Server do
       current_term: 0,
       peers: [],
       voted_for: nil, # TODO here?
-      log: [], commit_index: 0, last_applied: 0,
+      log: [], # TODO smarter data structure
+      commit_index: 0, last_applied: 0,
       current_time: -1,
       last_heartbeat_seen: -1,
       current_state_data: nil
@@ -40,6 +41,11 @@ defmodule Erix.Server do
     GenServer.cast(pid, {:add_peer, peer_pid})
   end
 
+  @doc "Receive a RequestVote RPC"
+  def request_vote(pid, term, candidate_id, last_log_index, last_log_term) do
+    GenServer.cast(pid, {:request_vote, term, candidate_id, last_log_index, last_log_term})
+  end
+
   @doc "Reply on a RequestVote RPC"
   def vote_reply(pid, term, vote_granted) do
     GenServer.cast(pid, {:vote_reply, term, vote_granted})
@@ -55,9 +61,6 @@ defmodule Erix.Server do
 
   deft __fortest__getstate(pid) do
     GenServer.call(pid, :__fortest__getstate)
-  end
-  deft __fortest__setstate(pid, state) do
-    GenServer.cast(pid, {:__fortest__setstate, state})
   end
 
   # Server implementation
@@ -81,7 +84,8 @@ defmodule Erix.Server do
     {:noreply, %{state | peers: [peer_pid | state.peers]}}
   end
 
-  # State-forwarding calls.
+  # Most of the calls here are state-specific; they forward to the
+  # corresponding state module and declare a @callback to implement.
 
   @callback tick(state :: %State{}) :: %State{}
 
@@ -89,6 +93,13 @@ defmodule Erix.Server do
     state = %{state | current_time: state.current_time + 1}
     mod = state_module(state.state)
     {:noreply, mod.tick(state)}
+  end
+
+  @callback request_vote(term :: integer, candidate_id :: pid, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
+
+  def handle_cast({:request_vote, term, candidate_id, last_log_index, last_log_term}, state) do
+    mod = state_module(state.state)
+    {:noreply, mod.request_vote(term, candidate_id, last_log_index, last_log_term, state)}
   end
 
   @callback vote_reply(state :: %State{}) :: %State{}

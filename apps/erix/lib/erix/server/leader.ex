@@ -32,4 +32,5 @@ defmodule Erix.Server.Leader do
     end)
   end
 
+  defdelegate request_vote, to: Erix.Server.Common
 end
