@@ -41,6 +41,7 @@ defmodule Erix.Server.Leader do
 
   def client_command(client_id, command_id, terms_to_log, state) do
     # Append to log
+    # TODO persist log
     new_log = state.log ++ [{state.current_term, terms_to_log}]
     state = %{state | log: new_log}
     # Broadcast to peers

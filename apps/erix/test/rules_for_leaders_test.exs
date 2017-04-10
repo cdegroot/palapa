@@ -65,7 +65,8 @@ defmodule Erix.RulesForLeadersTest do
     assert state.log == [{0, {:some, "stuff"}}]
     # Broadcasted to followers
     Mock.verify(follower)
-    # TODO Committed when quorum write
+    # TODO Committed when quorum write (send an append_entries_reply "from" follower, that
+    # should trigger quorum)
     # TODO Response to client
   end
 end

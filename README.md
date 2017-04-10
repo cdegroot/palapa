@@ -9,6 +9,7 @@ In alphabetical order:
 
 * [Amnesix, a work scheduler using Kafka for persistence and distribution](apps/amnesix)
 * [Entity-Component-System library, for games and maybe other things](apps/ecs)
+* [Erix, a Raft implemenation that should be fit for production use](apps/erix)
 * [Game related utilities](apps/exgame)
 * [A Pong game using ECS](apps/pong)
 * [Generic coding and test tools](apps/simpler)
