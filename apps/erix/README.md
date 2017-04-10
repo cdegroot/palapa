@@ -8,7 +8,11 @@ has intimate knowledge of rafts.
 This is a fully TDD implementation of Raft, using RocksDB for
 persistence. The tests in the main `test/` directory follow the
 condensed summary of the protocol in Figure 2 of [the Raft
-paper](https://raft.github.io/raft.pdf).
+paper](https://raft.github.io/raft.pdf). The reason that I'm writing this
+is a) because I can and it's a good exercise, and b) because the other
+Raft implementations in Elixir I'm aware of are either unmaintained, untested,
+or deemed by the author not to be fit for production use. This one is meant
+to be maintained, used in production, etcetera.
 
 For TDD purposes, the concept of time is externalized - servers receive
 `:tick` messages and make decisions on counts of these messages. This makes
@@ -16,9 +20,9 @@ testing simple without the need for timeouts in tests. Clicks are sent every
 hearbeat interval and other timeouts are specified as integer multiples (for
 now, it's all hardcoded values in ``constants.ex``).
 
-TODO: Write it.
-TODO: Implement section 6, Cluster Membership Changes
-TODO: Implement section 7, Log Compaction
+* [ ] TODO: Write it (underway).
+* [ ] TODO: Implement section 6, Cluster Membership Changes
+* [ ] TODO: Implement section 7, Log Compaction
 
 ## Installation
 
