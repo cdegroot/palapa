@@ -24,7 +24,7 @@ defmodule Erix.RulesForLeadersTest do
     # Note - transitioning into leader state is tricky. Let's try testing
     # the module directly.
     {:ok, follower} = Mock.with_expectations do
-      expect_call append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
     end
     state = %Erix.Server.State{peers: [follower]}
     Erix.Server.Leader.transition_from(:candidate, state)
@@ -34,7 +34,7 @@ defmodule Erix.RulesForLeadersTest do
 
   test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
     {:ok, follower} = Mock.with_expectations do
-      expect_call append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
     end
     state = %Erix.Server.State{}
     state = Erix.Server.Leader.transition_from(:candidate, state)
@@ -44,5 +44,9 @@ defmodule Erix.RulesForLeadersTest do
     Erix.Server.Leader.tick(state)
 
     Mock.verify(follower)
+  end
+
+  test "apply command from clients to state machine, then respond" do
+    flunk "To Be Implemented"
   end
 end

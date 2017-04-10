@@ -38,12 +38,12 @@ defmodule Erix.RulesForCandidatesTest do
   test "Become leader if a majority of votes received" do
     server = ServerMaker.new_primed_for_candidate()
     {:ok, follower_one} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
-      expect_call append_entries(_pid, 1, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call request_append_entries(_pid, 1, self(), 0, 0, [], 0)
     end
     {:ok, follower_two} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
-      expect_call append_entries(_pid, 1, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call request_append_entries(_pid, 1, self(), 0, 0, [], 0)
     end
     Erix.Server.add_peer(server, follower_one)
     Erix.Server.add_peer(server, follower_two)
@@ -61,9 +61,12 @@ defmodule Erix.RulesForCandidatesTest do
   end
 
   test "Candidate that receives AppendEntries becomes a follower" do
+    {:ok, peer} = Mock.with_expectations do
+      expect_call append_entries_reply(_pid, 1, false)
+    end
     server = ServerMaker.new_candidate()
 
-    Erix.Server.append_entries(server, 1, self(), 0, 0, [], 0)
+    Erix.Server.request_append_entries(server, 1, peer, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower

@@ -13,29 +13,32 @@ defmodule Erix.Server.Common do
   def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
     {mod, pid} = candidate_id
     # TODO refactor this nested if/else hairball
-    if term < state.current_term do
-      mod.vote_reply(pid, state.current_term, false)
+    will_vote = if term < state.current_term do
+      false
     else
       if state.voted_for == nil or state.voted_for == candidate_id do
         my_last_log_index = length(state.log)
         if my_last_log_index > last_log_index do
-          mod.vote_reply(pid, state.current_term, false)
+          false
         else
           if my_last_log_index == 0 do
-            mod.vote_reply(pid, state.current_term, true)
+            true
           else
             {my_last_log_term, _} = Enum.at(state.log, length(state.log) - 1)
             # we already established that candidate's log is equal or longer.
             if my_last_log_term > last_log_term do
-              mod.vote_reply(pid, state.current_term, false)
+              false
             else
-              mod.vote_reply(pid, state.current_term, true)
+              true
             end
           end
         end
       end
     end
-    state
+    mod.vote_reply(pid, state.current_term, will_vote)
+    # TODO persist voted_for
+    voted_for = if will_vote, do: candidate_id, else: nil
+    %{state | voted_for: voted_for}
   end
 
 

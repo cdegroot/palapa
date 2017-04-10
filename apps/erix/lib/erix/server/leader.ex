@@ -5,6 +5,9 @@ defmodule Erix.Server.Leader do
   require Logger
   use Erix.Constants
 
+  defmodule State do
+    defstruct next_index: [], match_index: []
+  end
   @behaviour Erix.Server
 
   def transition_from(:candidate, state) do
@@ -23,7 +26,7 @@ defmodule Erix.Server.Leader do
     |> Enum.map(fn({mod, pid}) ->
       # TODO make append_entries async or parallel with tasks
       # TODO some fake stuff, also we don't handle responses.
-      mod.append_entries(pid, state.current_term, self(),
+      mod.request_append_entries(pid, state.current_term, self(),
         0, # fake prev_log_index
         0, # fake prev_log_term,
         [],
@@ -32,5 +35,5 @@ defmodule Erix.Server.Leader do
     end)
   end
 
-  defdelegate request_vote, to: Erix.Server.Common
+  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 end

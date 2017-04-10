@@ -24,6 +24,7 @@ defmodule Erix.Server.Candidate do
   @doc "Become a candidate"
   def transition_from(_, state) do
     candidate_state = %State{election_start: state.current_time, vote_count: 1}
+    # TODO persist current_term
     state = %{state | state: :candidate,
               current_term: state.current_term + 1,
               current_state_data: candidate_state}
@@ -48,12 +49,12 @@ defmodule Erix.Server.Candidate do
   end
 
   @doc "Received an AppendEntries RPC. This immediatel triggers follower behaviour"
-  def append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
+  def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
     mod = Erix.Server.state_module(:follower)
     state = mod.transition_from(:candidate, state)
     # Let the follower state handle the actual call
-    mod.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
+    mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
   end
 
-  defdelegate request_vote, to: Erix.Server.Common
+  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 end

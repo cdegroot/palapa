@@ -41,6 +41,9 @@ defmodule Erix.Server do
     GenServer.cast(pid, {:add_peer, peer_pid})
   end
 
+  # TODO rename request vote to request request vote or something? At least some
+  # naming consistency for all of these.
+
   @doc "Receive a RequestVote RPC"
   def request_vote(pid, term, candidate_id, last_log_index, last_log_term) do
     GenServer.cast(pid, {:request_vote, term, candidate_id, last_log_index, last_log_term})
@@ -52,8 +55,8 @@ defmodule Erix.Server do
   end
 
   @doc "Receive an AppendEntries RPC"
-  def append_entries(pid, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit) do
-    GenServer.call(pid, {:append_entries, term, leader_id, prev_log_index, prev_log_term,
+  def request_append_entries(pid, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit) do
+    GenServer.cast(pid, {:request_append_entries, term, leader_id, prev_log_index, prev_log_term,
                          entries, leader_commit})
   end
 
@@ -109,16 +112,17 @@ defmodule Erix.Server do
     {:noreply, mod.vote_reply(term, vote_granted, state)}
   end
 
-  @type append_entries_reply :: {term :: integer, success :: boolean}
-  @callback append_entries(term :: integer, leader_id :: pid, prev_log_index :: integer,
-    prev_log_term :: integer, entries :: list(), leader_commit :: integer,
-    state :: %State{}) :: {append_entries_reply, %State{}}
 
-  def handle_call({:append_entries, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit}, _from, state) do
+  @callback request_append_entries(term :: integer, leader_id :: pid, prev_log_index :: integer,
+    prev_log_term :: integer, entries :: list(), leader_commit :: integer,
+    state :: %State{}) :: %State{}
+
+  def handle_cast({:request_append_entries, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit}, state) do
     mod = state_module(state.state)
-    {reply, state} = mod.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
-    {:reply, reply, state}
+    {:noreply, mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)}
   end
+
+  @type append_entries_reply :: {term :: integer, success :: boolean}
 
   # Helper stuff
 

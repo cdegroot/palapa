@@ -16,27 +16,32 @@ defmodule Erix.Server.Follower do
   end
 
   @doc "Receive an AppendEntries RPC"
-  def append_entries(term, _, _, _, _, _, state = %Erix.Server.State{current_term: current_term})
+  def append_entries(term, leader_id, _, _, _, _, state = %Erix.Server.State{current_term: current_term})
   when term < current_term do
+    {mod, pid} = leader_id
     # Bad term, send the current term back
-    {{state.current_term, false}, state}
+    mod.append_entries_reply(pid, state.current_term, false)
+    state
   end
-  def append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
+  def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
+    {mod, pid} = leader_id
     prev_log_entry = if length(state.log) >= prev_log_index do
       Enum.at(state.log, prev_log_index - 1)
     else
       nil
     end
-    case prev_log_entry do
+    {reply, state} = case prev_log_entry do
       nil ->
-        {{state.current_term, false}, state}
+        {false, state}
       {pl_term, _} when pl_term != prev_log_term ->
-        {{state.current_term, false}, state}
+        {false, state}
       _ ->
         state = append_entries_to_log(prev_log_index, entries, state)
         state = update_commit_index(leader_commit, state)
-        {{state.current_term, true}, state}
+        {true, state}
     end
+    mod.append_entries_reply(pid, state.current_term, reply)
+    state
   end
 
   def transition_from(_, state) do
@@ -59,5 +64,5 @@ defmodule Erix.Server.Follower do
     %{state | commit_index: new_commit_index}
   end
 
-  defdelegate request_vote, to: Erix.Server.Common
+  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 end
