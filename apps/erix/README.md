@@ -5,7 +5,7 @@ has intimate knowledge of rafts.
 
 ![Erix](http://www.asterix.com/asterix-de-a-a-z/les-personnages/perso/a38b.gif)
 
-This is a fully TDD implementation of Raft, using RocksDB for
+This is a fully TDD implementation of Raft, using LevelDB for
 persistence. The tests in the main `test/` directory follow the
 condensed summary of the protocol in Figure 2 of [the Raft
 paper](https://raft.github.io/raft.pdf). The reason that I'm writing this
