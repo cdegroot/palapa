@@ -21,6 +21,8 @@ defmodule Erix.Server.Candidate do
     end
   end
 
+  defdelegate add_peer(peer_id, state), to: Erix.Server.Common
+
   @doc "Become a candidate"
   def transition_from(_, state) do
     candidate_state = %State{election_start: state.current_time, vote_count: 1}

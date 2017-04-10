@@ -24,22 +24,23 @@ defmodule Erix.RulesForLeadersTest do
     # Note - transitioning into leader state is tricky. Let's try testing
     # the module directly.
     {:ok, follower} = Mock.with_expectations do
-      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0)
     end
     state = %Erix.Server.State{peers: [follower]}
+
     Erix.Server.Leader.transition_from(:candidate, state)
 
     Mock.verify(follower)
   end
 
+  require Logger
   test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
     {:ok, follower} = Mock.with_expectations do
-      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0), reply: {0, true}
+      expect_call request_append_entries(_pid, 0, self(), 0, 0, [], 0)
     end
     state = %Erix.Server.State{}
     state = Erix.Server.Leader.transition_from(:candidate, state)
-
-    state = %{state | peers: [follower]}
+    state = Erix.Server.Leader.add_peer(follower, state)
 
     Erix.Server.Leader.tick(state)
 
@@ -47,6 +48,24 @@ defmodule Erix.RulesForLeadersTest do
   end
 
   test "apply command from clients to state machine, then respond" do
-    flunk "To Be Implemented"
+    # Where "apply to state machine" means have the append entry rpc executed by at least
+    # half the followers (including the leader, which just writes it to log)
+    {:ok, follower} = Mock.with_expectations do
+      expect_call request_append_entries(_pid, 0, self(), 0, 0, [{0, {:some, "stuff"}}], 0)
+    end
+    {:ok, client} = Mock.with_expectations do
+      expect_call command_completed(_pid, 12345)
+    end
+    state = %Erix.Server.State{}
+    state = Erix.Server.Leader.transition_from(:candidate, state)
+    state = Erix.Server.Leader.add_peer(follower, state)
+
+    state = Erix.Server.Leader.client_command(client, 12345, {:some, "stuff"}, state)
+    # Appended to local log
+    assert state.log == [{0, {:some, "stuff"}}]
+    # Broadcasted to followers
+    Mock.verify(follower)
+    # TODO Committed when quorum write
+    # TODO Response to client
   end
 end

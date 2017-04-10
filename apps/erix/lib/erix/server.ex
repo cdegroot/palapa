@@ -8,6 +8,7 @@ defmodule Erix.Server do
   require Logger
 
   @type log_entry :: {term :: integer, entry :: any}
+  @type peer_ref :: {module :: atom, pid :: pid}
 
   defmodule State do
     defstruct state: nil,
@@ -82,11 +83,6 @@ defmodule Erix.Server do
     {:noreply, state}
   end
 
-
-  def handle_cast({:add_peer, peer_pid}, state) do
-    {:noreply, %{state | peers: [peer_pid | state.peers]}}
-  end
-
   # Most of the calls here are state-specific; they forward to the
   # corresponding state module and declare a @callback to implement.
 
@@ -98,7 +94,15 @@ defmodule Erix.Server do
     {:noreply, mod.tick(state)}
   end
 
-  @callback request_vote(term :: integer, candidate_id :: pid, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
+  @callback add_peer(peer_id :: peer_ref, state :: %State{}) :: %State{}
+
+  def handle_cast({:add_peer, peer_id}, state) do
+    mod = state_module(state.state)
+    {:noreply, mod.add_peer(peer_id, state)}
+  end
+
+
+  @callback request_vote(term :: integer, candidate_id :: peer_ref, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
 
   def handle_cast({:request_vote, term, candidate_id, last_log_index, last_log_term}, state) do
     mod = state_module(state.state)
@@ -113,7 +117,7 @@ defmodule Erix.Server do
   end
 
 
-  @callback request_append_entries(term :: integer, leader_id :: pid, prev_log_index :: integer,
+  @callback request_append_entries(term :: integer, leader_id :: peer_ref, prev_log_index :: integer,
     prev_log_term :: integer, entries :: list(), leader_commit :: integer,
     state :: %State{}) :: %State{}
 

@@ -65,6 +65,9 @@ defmodule Simpler.Mock do
   defp statements({:__block__, _, statements}), do: statements
   defp statements(statement), do: [statement]
 
+  defp call_to_message([{message, _, args}]) do
+    {message, args, :ok}
+  end
   defp call_to_message([{message, _, args}, [reply: canned_reply]]) do
     {message, args, canned_reply}
   end

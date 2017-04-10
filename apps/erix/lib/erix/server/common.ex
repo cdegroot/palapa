@@ -10,6 +10,10 @@ defmodule Erix.Server.Common do
 
   @behaviour Erix.Server
 
+  def add_peer(peer_id, state) do
+    %{state | peers: [peer_id | state.peers]}
+  end
+
   def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
     {mod, pid} = candidate_id
     # TODO refactor this nested if/else hairball

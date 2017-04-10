@@ -15,8 +15,9 @@ defmodule Erix.Server.Follower do
     end
   end
 
-  @doc "Receive an AppendEntries RPC"
-  def append_entries(term, leader_id, _, _, _, _, state = %Erix.Server.State{current_term: current_term})
+  defdelegate add_peer(peer_id, state), to: Erix.Server.Common
+
+  def request_append_entries(term, leader_id, _, _, _, _, state = %Erix.Server.State{current_term: current_term})
   when term < current_term do
     {mod, pid} = leader_id
     # Bad term, send the current term back
@@ -48,6 +49,8 @@ defmodule Erix.Server.Follower do
     %{state | state: :follower}
   end
 
+  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
+
   defp append_entries_to_log(prev_log_index, entries, state) do
     # TODO persist log (synchronously, before responding)
 
@@ -64,5 +67,4 @@ defmodule Erix.Server.Follower do
     %{state | commit_index: new_commit_index}
   end
 
-  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 end
