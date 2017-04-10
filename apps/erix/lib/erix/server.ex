@@ -14,7 +14,7 @@ defmodule Erix.Server do
       persistence_mod: nil, persistence_pid: nil,
       current_term: 0,
       peers: [],
-      voted_for: nil, # TODO here?
+      voted_for: nil,
       log: [], # TODO smarter data structure
       commit_index: 0, last_applied: 0,
       current_time: -1,

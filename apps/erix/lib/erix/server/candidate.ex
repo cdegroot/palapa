@@ -54,4 +54,6 @@ defmodule Erix.Server.Candidate do
     # Let the follower state handle the actual call
     mod.append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
   end
+
+  defdelegate request_vote, to: Erix.Server.Common
 end

@@ -58,4 +58,6 @@ defmodule Erix.Server.Follower do
     new_commit_index = min(leader_commit, length(state.log))
     %{state | commit_index: new_commit_index}
   end
+
+  defdelegate request_vote, to: Erix.Server.Common
 end
