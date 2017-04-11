@@ -4,8 +4,9 @@ jobs:
     working_directory: ~/palapa
     docker:
       - image: trenpixster/elixir:1.4.1
+      - image: spotify/kafka
     steps:
       - checkout
       - run: mix deps.get
-      - run: mix coveralls.circle --umbrella --exclude integration
+      - run: mix coveralls.circle --umbrella
 
