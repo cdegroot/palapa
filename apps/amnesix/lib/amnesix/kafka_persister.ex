@@ -24,14 +24,15 @@ defmodule Amnesix.KafkaPersister do
   end
 
   @doc """
-  Implements `c:Amnesix.Persister.persist`
+  Persist a key/value pair
   """
   def persist(pid, key, value) do
     GenServer.call(pid, {:persist, key, value})
   end
 
   @doc """
-  Implements `c:Amnesix.Persister.load`
+  Load all data (key/value pairs) from the indicated partitions and call the
+  callback_fn with each k/v pair.
   """
   def load(pid, parts, callback_fn) do
     GenServer.call(pid, {:load, parts, callback_fn})

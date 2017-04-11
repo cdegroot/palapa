@@ -16,6 +16,6 @@ import_config "../apps/*/config/config.exs"
 
 if Mix.env == :test do
 
-  config :logger, level: :error
+  config :logger, level: :debug
 
 end

@@ -3,6 +3,7 @@ defmodule Amnesix.BrodConsumerTest do
   @moduletag :integration
 
   alias Amnesix.BrodConsumer
+  require Logger
 
   defmodule MockWorkersSupervisor do
     def load_partitions(pid, partitions) do
@@ -20,13 +21,26 @@ defmodule Amnesix.BrodConsumerTest do
 
   test "subscriber hooks up to Brod and gets partitions assigned" do
     {:ok, _pid} = BrodConsumer.start_link({MockWorkersSupervisor, self()})
-    Process.sleep(500)
-    assert_received :remove
-    assert_received {:load, [0, 1]}
+    assert_partitions_eventually_load
+  end
+
+  defp assert_partitions_eventually_load do
+    # We can have one or two :remove messages, but then we should get
+    # a load.
+    receive do
+      :remove ->
+        Logger.debug("Got remove, retrying")
+        assert_partitions_eventually_load
+      {:load, [0, 1]} ->
+        Logger.debug("Got load, all good")
+        :ok
+    after
+      10_000 -> flunk "Timeout waiting for partition load"
+    end
   end
 
   test "post load, partitions are subscribed to and messages flow" do
     {:ok, _pid} = BrodConsumer.start_link({MockWorkersSupervisor, self()})
-    Process.sleep(500)
+    # TODO complete this test.
   end
 end

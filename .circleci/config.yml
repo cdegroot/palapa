@@ -4,7 +4,9 @@ jobs:
     working_directory: ~/palapa
     docker:
       - image: trenpixster/elixir:1.4.1
-      - image: spotify/kafka
+      - image: cdegroot/kafka:143a272
+        environment:
+          KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
     steps:
       - checkout
       - run: mix deps.get
