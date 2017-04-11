@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/palapa
+    docker:
+      - image: trenpixster/elixir:1.4.1
+    steps:
+      - checkout
+      - run: mix deps.get
+      - run: mix test --exclude integration
+
