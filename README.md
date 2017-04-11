@@ -1,5 +1,7 @@
 # Palapa
 
+[![CircleCI](https://circleci.com/gh/cdegroot/palapa.svg?style=svg)](https://circleci.com/gh/cdegroot/palapa) [![Coverage Status](https://coveralls.io/repos/github/cdegroot/palapa/badge.svg)](https://coveralls.io/github/cdegroot/palapa)
+
 I got fed up of having my experiments, tools, libraries spread
 out over lots of GH repos. Let's try one very large umbrella.
 
