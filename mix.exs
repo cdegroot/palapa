@@ -10,7 +10,7 @@ defmodule Palapa.Mixfile do
      preferred_cli_env: [
        "coveralls": :test,
        "coveralls.detail": :test,
-       "coveralls.post": :test,
+       "coveralls.circle": :test,
        "coveralls.html": :test,
        "test_all": :test],
      deps: deps()]

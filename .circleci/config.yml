@@ -7,5 +7,5 @@ jobs:
     steps:
       - checkout
       - run: mix deps.get
-      - run: mix test --exclude integration
+      - run: mix coveralls.circle --umbrella --exclude integration
 
