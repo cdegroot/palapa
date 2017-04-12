@@ -65,8 +65,18 @@ defmodule Erix.RulesForLeadersTest do
     assert state.log == [{0, {:some, "stuff"}}]
     # Broadcasted to followers
     Mock.verify(follower)
-    # TODO Committed when quorum write (send an append_entries_reply "from" follower, that
-    # should trigger quorum)
-    # TODO Response to client
+    # Committed when quorum write.
+    state = Erix.Server.Leader.append_entries_reply(follower, 0, true, state)
+    # check next_index, commit_index
+    leader_state = state.current_state_data
+    # TODO finalize assertions
+    assert Map.get(leader_state.next_index, follower) == 2
+    assert Map.get(leader_state.match_index, follower) == 1
+    assert state.commit_index == 1
+    # Reply to the client implies it got committed.
+    Mock.verify(client)
+
+    # We also shouldn't have outstanding client replies by now
+    assert Map.size(leader_state.client_replies) == 0
   end
 end

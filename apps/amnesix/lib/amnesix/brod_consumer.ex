@@ -57,7 +57,7 @@ defmodule Amnesix.BrodConsumer do
 
   def handle_cast({:assignments_received, partition_offsets, generation_id}, state) do
     # TODO some test coverage on the subscribing
-    Logger.info("In genserver assignment received #{inspect partition_offsets}")
+    Logger.info("Assignment received #{inspect partition_offsets}")
     # OK, we have a list of partitions we are responsible for. Have the
     # workers supervisor start the workers.
     # TODO do we need to have a consumer config? ---------v

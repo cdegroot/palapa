@@ -62,7 +62,7 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "Candidate that receives AppendEntries becomes a follower" do
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, 1, false)
+      expect_call append_entries_reply(_pid, _from, 1, false)
     end
     server = ServerMaker.new_candidate()
 

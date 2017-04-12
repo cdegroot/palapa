@@ -61,6 +61,11 @@ defmodule Erix.Server do
                          entries, leader_commit})
   end
 
+  @doc "Reply on an AppendEntries RPC"
+  def append_entries_reply(pid, from, term, success) do
+    GenServer.cast(pid, {:append_entries_reply, from, term, success})
+  end
+
   # Mostly test helpers that dig around in state
 
   deft __fortest__getstate(pid) do
@@ -126,7 +131,12 @@ defmodule Erix.Server do
     {:noreply, mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)}
   end
 
-  @type append_entries_reply :: {term :: integer, success :: boolean}
+  @callback append_entries_reply(from :: peer_ref, term :: integer, success :: boolean, state :: %State{}) :: %State{}
+
+  def handle_cast({:append_entries_reply, from, term, success}, state) do
+    mod = state_module(state.state)
+    {:noreply, mod.append_entries_reply(from, term, success, state)}
+  end
 
   # Helper stuff
 

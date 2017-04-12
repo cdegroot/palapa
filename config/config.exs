@@ -6,7 +6,7 @@ if Mix.env == :dev do
 
 config :mix_test_watch,
   clear: true,
-  tasks: ["test", "credo --strict"]
+  tasks: ["test"]
 
 end
 
@@ -16,6 +16,6 @@ import_config "../apps/*/config/config.exs"
 
 if Mix.env == :test do
 
-  config :logger, level: :debug
+  config :logger, level: :error
 
 end

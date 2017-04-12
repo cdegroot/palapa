@@ -37,7 +37,7 @@ defmodule Erix.AppendEntriesRpcTest do
     # AppendEntry and candidates will flip into follower mode before handling
     # it.
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, 42, false)
+      expect_call append_entries_reply(_pid, _from, 42, false)
     end
     state = %Erix.Server.State{current_term: 42}
     Erix.Server.Follower.request_append_entries(41, peer, 0, 0, [], 0, state)
@@ -46,7 +46,7 @@ defmodule Erix.AppendEntriesRpcTest do
 
   test "Reply false if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm" do
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, 42, false)
+      expect_call append_entries_reply(_pid, _from, 42, false)
     end
     state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {41, "bar"}]}
     Erix.Server.Follower.request_append_entries(42, peer, 2, 42, [], 0, state)
@@ -55,7 +55,7 @@ defmodule Erix.AppendEntriesRpcTest do
 
   test "Rewrite log when an existing entry conflicts with a new one" do
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, 42, true)
+      expect_call append_entries_reply(_pid, _from, 42, true)
     end
     state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {42, "bar"}, {43, "baz"}]}
     state = Erix.Server.Follower.request_append_entries(42, peer,
@@ -69,7 +69,7 @@ defmodule Erix.AppendEntriesRpcTest do
 
   test "update commit_index if leader_commit > commit_index" do
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, 42, true)
+      expect_call append_entries_reply(_pid, _from, 42, true)
     end
     state = %Erix.Server.State{current_term: 42, log: [{41, "foo"}, {42, "bar"}, {42, "baz"}],
                               commit_index: 2}
