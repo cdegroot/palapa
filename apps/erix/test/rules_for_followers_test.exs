@@ -5,7 +5,7 @@ defmodule Erix.RulesForFollowersTest do
 
   @moduledoc """
   Followers (§5.2):
-  • Respond to RPCs from candidates and leaders
+  • TODO? Respond to RPCs from candidates and leaders
   • If election timeout elapses without receiving AppendEntries
     RPC from current leader or granting vote to candidate:
     convert to candidate
