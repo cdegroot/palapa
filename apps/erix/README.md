@@ -22,6 +22,7 @@ now, it's all hardcoded values in ``constants.ex``).
 
 * [ ] TODO: Implement all of the specs as basic tests
 * [ ] TODO: Add persistence of the required values
+* [ ] TODO: Client/state machine interaction
 * [ ] TODO: Implement section 6, Cluster Membership Changes
 * [ ] TODO: Implement section 7, Log Compaction
 
