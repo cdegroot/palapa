@@ -39,11 +39,11 @@ defmodule Erix.RulesForCandidatesTest do
     server = ServerMaker.new_primed_for_candidate()
     {:ok, follower_one} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
-      expect_call request_append_entries(_pid, 1, self(), 0, 0, [], 0)
+      expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
     end
     {:ok, follower_two} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
-      expect_call request_append_entries(_pid, 1, self(), 0, 0, [], 0)
+      expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
     end
     Erix.Server.add_peer(server, follower_one)
     Erix.Server.add_peer(server, follower_two)

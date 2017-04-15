@@ -11,14 +11,24 @@ defmodule Erix.Server.Leader do
   end
   @behaviour Erix.Server
 
+  # TODO timeout responses for last_ping so we retry. The problem here of course is
+  # that we timeout last ping, send a new one, then get an answer for the old one
+  # but interpret that as an answer for the new one. We probably need to send cookies
+  # along so we can match requests and answers. A small 32 bit number would probably
+  # suffice, for example a 32bit crc over the message contents.
+
   # Explicitly specify :candidate here, other transitions aren't valid.
   def transition_from(:candidate, state) do
+    state = make_leader_state(state)
+    ping_peers(state)
+  end
+
+  deft make_leader_state(state) do
     {_, last_index} = get_last_term_and_index(state)
     next_index = Map.new(state.peers, fn(p) -> {p, last_index + 1} end)
     match_index = Map.new(state.peers, fn(p) -> {p, 0} end)
     leader_state = %State{next_index: next_index, match_index: match_index}
     state = %{state | state: :leader, current_state_data: leader_state}
-    ping_peers(state)
   end
 
   def tick(state) do
@@ -55,7 +65,11 @@ defmodule Erix.Server.Leader do
   end
 
   def append_entries_reply(from, term, false, state) do
-    # TODO remove last_ping, decrease next_index by one, ping peer again.
+    leader_state = state.current_state_data
+    last_ping = Map.delete(leader_state.last_ping, from)
+    next_index = Map.update!(leader_state.next_index, from, fn(cur) -> cur - 1 end)
+    %{state | current_state_data: %{leader_state | last_ping: last_ping, next_index: next_index}}
+    # TODO maybe ping right away? For now, we ping again.
   end
   def append_entries_reply(from, term, true, state) do
     leader_state = state.current_state_data
@@ -82,7 +96,7 @@ defmodule Erix.Server.Leader do
 
   defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 
-  defp ping_peers(state) do
+  deft ping_peers(state) do
     leader_state = state.current_state_data
     last_index = get_last_index(state)
     new_last_pings = state.peers
