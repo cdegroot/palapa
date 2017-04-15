@@ -38,7 +38,11 @@ defmodule Erix.Server.Candidate do
     state
   end
 
-  @doc "Receive a reply to a vote"
+  def vote_reply(term, vote_granted, state = %Erix.Server.State{current_term: current_term}) when term > current_term do
+    mod = Erix.Server.state_module(:follower)
+    # TODO persist current_term
+    mod.transition_from(state.state, %{state | current_term: term})
+  end
   def vote_reply(term, vote_granted, state) do
     vote_count = state.current_state_data.vote_count + 1
     peer_count = length(state.peers)
@@ -50,13 +54,15 @@ defmodule Erix.Server.Candidate do
     end
   end
 
-  @doc "Received an AppendEntries RPC. This immediatel triggers follower behaviour"
+  @doc "Received an AppendEntries RPC. This immediately triggers follower behaviour"
   def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
     mod = Erix.Server.state_module(:follower)
     state = mod.transition_from(:candidate, state)
     # Let the follower state handle the actual call
     mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
   end
+
+  defdelegate append_entries_reply(from, term, reply, state), to: Erix.Server.Common
 
   defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
 end

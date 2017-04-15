@@ -42,14 +42,20 @@ defmodule Erix.Server.Follower do
         {true, state}
     end
     mod.append_entries_reply(pid, {Erix.Server, self()}, state.current_term, reply)
-    state
+    # Term is same or newer. If it's newer, we're supposed to adopt it.
+    # TODO: Persist current_term
+    %{state | current_term: term}
   end
+
+  defdelegate append_entries_reply(from, term, reply, state), to: Erix.Server.Common
 
   def transition_from(_, state) do
-    %{state | state: :follower}
+    %{state | state: :follower, current_state_data: nil}
   end
 
-  defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
+  defdelegate request_vote(term, candidate_id, last_log_index, last_log_term, state), to: Erix.Server.Common
+
+  defdelegate vote_reply(term, vote_granted, state), to: Erix.Server.Common
 
   defp append_entries_to_log(prev_log_index, entries, state) do
     # TODO persist log (synchronously, before responding)

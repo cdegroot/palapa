@@ -55,6 +55,9 @@ defmodule Erix.Server do
     GenServer.cast(pid, {:vote_reply, term, vote_granted})
   end
 
+  # This should not happen...
+
+
   @doc "Receive an AppendEntries RPC"
   def request_append_entries(pid, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit) do
     GenServer.cast(pid, {:request_append_entries, term, leader_id, prev_log_index, prev_log_term,

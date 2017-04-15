@@ -14,6 +14,16 @@ defmodule Erix.Server.Common do
     %{state | peers: [peer_id | state.peers]}
   end
 
+  def request_vote(term, candidate_id, last_log_index, last_log_term, state = %Erix.Server.State{current_term: current_term})
+  when term > current_term do
+    # We've seen a newer term - immediately transition to follower, no matter what
+    # we were doing before.
+    module = Erix.Server.state_module(:follower)
+    # TODO persist current term
+    state = module.transition_from(state.state, %{state | current_term: term})
+    # And then we can most likely positively reply
+    request_vote(term, candidate_id, last_log_index, last_log_term, state)
+  end
   def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
     {mod, pid} = candidate_id
     # TODO refactor this nested if/else hairball
@@ -45,5 +55,19 @@ defmodule Erix.Server.Common do
     %{state | voted_for: voted_for}
   end
 
+  def append_entries_reply(_from, term, _reply, state) do
+    upgrade_term_if_newer_seen(term, state)
+  end
 
+  def vote_reply(term, _vote_granted, state) do
+    upgrade_term_if_newer_seen(term, state)
+  end
+
+  defp upgrade_term_if_newer_seen(term, state) do
+    if term > state.current_term do
+      module = Erix.Server.state_module(:follower)
+      # TODO persist current term
+      module.transition_from(state.state, %{state | current_term: term})
+    end
+  end
 end

@@ -10,13 +10,13 @@ defmodule Erix.RulesForLeadersTest do
     prevent election timeouts (§5.2)
   • If command received from client: append entry to local log,
     respond after entry applied to state machine (§5.3)
-  • TODO If last log index ≥ nextIndex for a follower: send
+  • If last log index ≥ nextIndex for a follower: send
     AppendEntries RPC with log entries starting at nextIndex
-  • TODO If successful: update nextIndex and matchIndex for
+  • If successful: update nextIndex and matchIndex for
     follower (§5.3)
   • If AppendEntries fails because of log inconsistency:
     decrement nextIndex and retry (§5.3)
-  • TODO If there exists an N such that N > commitIndex, a majority
+  • If there exists an N such that N > commitIndex, a majority
     of matchIndex[i] ≥ N, and log[N].term == currentTerm:
     set commitIndex = N (§5.3, §5.4).
   """
@@ -34,7 +34,6 @@ defmodule Erix.RulesForLeadersTest do
     Mock.verify(follower)
   end
 
-  require Logger
   test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 0, _self, 0, 0, [], 0)
@@ -70,9 +69,14 @@ defmodule Erix.RulesForLeadersTest do
     state = Erix.Server.Leader.append_entries_reply(follower, 0, true, state)
     # check next_index, commit_index
     leader_state = state.current_state_data
+
+    # If successful, update next_index and match_index for follower
     assert Map.get(leader_state.next_index, follower) == 2
     assert Map.get(leader_state.match_index, follower) == 1
+
+    # Move the commit index forward to the point of majority agreement.
     assert state.commit_index == 1
+
     # Reply to the client implies it got committed.
     Mock.verify(client)
 
@@ -94,7 +98,7 @@ defmodule Erix.RulesForLeadersTest do
                                last_applied: 6, peers: [follower]}
     state = Erix.Server.Leader.transition_from(:candidate, state)
 
-    state = Erix.Server.Leader.append_entries_reply(follower, 24, false, state)
+    state = Erix.Server.Leader.append_entries_reply(follower, 3, false, state)
     Erix.Server.Leader.ping_peers(state)
 
     Mock.verify(follower)

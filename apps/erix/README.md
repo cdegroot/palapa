@@ -20,7 +20,8 @@ testing simple without the need for timeouts in tests. Clicks are sent every
 hearbeat interval and other timeouts are specified as integer multiples (for
 now, it's all hardcoded values in ``constants.ex``).
 
-* [ ] TODO: Write it (underway).
+* [ ] TODO: Implement all of the specs as basic tests
+* [ ] TODO: Add persistence of the required values
 * [ ] TODO: Implement section 6, Cluster Membership Changes
 * [ ] TODO: Implement section 7, Log Compaction
 

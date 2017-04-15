@@ -64,6 +64,27 @@ defmodule Erix.Server.Leader do
     ping_peers(state)
   end
 
+  @doc """
+  When a leader receives an AppendEntries RPC, we ignore it unless it has a newer term,
+  then we transition to follower
+  """
+  def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
+    if term > state.current_term do
+      mod = Erix.Server.state_module(:follower)
+      state = mod.transition_from(state.state, state)
+      # Let the follower state handle the actual call
+      mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
+    end
+  end
+
+  def append_entries_reply(from, term, _repl, state = %Erix.Server.State{current_term: current_term})
+  when term > current_term do
+    if term > state.current_term do
+      mod = Erix.Server.state_module(:follower)
+      # TODO persist current_term
+      mod.transition_from(state.state, %{state | current_term: term})
+    end
+  end
   def append_entries_reply(from, term, false, state) do
     leader_state = state.current_state_data
     last_ping = Map.delete(leader_state.last_ping, from)
@@ -95,6 +116,8 @@ defmodule Erix.Server.Leader do
   end
 
   defdelegate request_vote(pid, term, candidate_id, last_log_index, last_log_term), to: Erix.Server.Common
+
+  defdelegate vote_reply(pid, vote_granted, term), to: Erix.Server.Common
 
   deft ping_peers(state) do
     leader_state = state.current_state_data
