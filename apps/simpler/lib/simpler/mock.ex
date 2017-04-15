@@ -3,10 +3,7 @@ defmodule Simpler.Mock do
   A generic Mock module which can receive expectations and later verify them.
   """
   # Currently very basic, but functional.
-  # TODO handle casts
-  # TODO hande no replies (default to `:ok`?)
   # TODO now we're in full mocking territory, :once, :twice, :any, times?
-  # TODO pattern matching stuff? Binding parameters and shit? (sorta done by "ignoring" variables)
   # TODO save unexpected calls and fail that on verify (for now, we immediately crash)
 
   require Logger
@@ -26,19 +23,18 @@ defmodule Simpler.Mock do
   """
   defmacro with_expectations(opts) do
     # TODO mucho cleanups, splitting
+    # TODO try to expand variables - if they resolve to a value, use these
     caller_mod = __CALLER__.module
     {caller_fun, _arity} = __CALLER__.function
     random_module_name = Integer.to_string(:rand.uniform(100000000000))
     mock_module = Module.concat([caller_mod, caller_fun, random_module_name])
     result = statements(opts[:do])
     |> Enum.map(fn({:expect_call, _, expectation}) ->
-      message = call_to_message(expectation)
-      {msg, args, _reply} = message
+      {msg, args, reply} = call_to_message(expectation)
       args = args || []
       forwarder = Simpler.Mock.Generator.make_forwarder({msg, length(args)}, quote do: @pid)
-      message = message |> Macro.escape
       expectation = quote do
-        Simpler.Mock.Server.expect_call(pid, unquote(message))
+        Simpler.Mock.Server.expect_call(pid, {unquote(msg), unquote(args), unquote(reply)})
       end
       {expectation, forwarder}
     end)
@@ -66,9 +62,23 @@ defmodule Simpler.Mock do
   defp statements(statement), do: [statement]
 
   defp call_to_message([{message, _, args}]) do
-    {message, args, :ok}
+    {message, protect_vars_in_args(args), :ok}
   end
   defp call_to_message([{message, _, args}, [reply: canned_reply]]) do
-    {message, args, canned_reply}
+    {message, protect_vars_in_args(args), canned_reply}
   end
+  # Bad name. In any case, when we use a variable with an underscore, that
+  # signifies a "don't care" value. We splice it back not as a variable, but
+  # as the variable's AST so the matching will skip it.
+  defp protect_vars_in_args(args) do
+    Enum.map(args, &protect_vars_in_arg/1)
+  end
+  defp protect_vars_in_arg({var, _line, _stuff} = arg) do
+    if String.starts_with?(Atom.to_string(var), "_") do
+      Macro.escape(arg)
+    else
+      arg
+    end
+  end
+  defp protect_vars_in_arg(arg), do: arg
 end

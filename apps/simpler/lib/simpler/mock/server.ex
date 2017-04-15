@@ -26,7 +26,7 @@ defmodule Simpler.Mock.Server do
   end
 
   def handle_call({:__expect_call__, message}, _from, state) do
-    {:reply, :ok, [message | state]}
+    {:reply, :ok, state ++ [message]}
   end
 
   def handle_call({:__verify__}, _from, state) do

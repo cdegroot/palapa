@@ -31,9 +31,9 @@ defmodule SimpleMockTest do
 
   test "mock definition works" do
     # Setup mocks and module under test
+    you = "you" # Note that this should not trigger an "unused" warning.
     {:ok, mock_dependency = {_mod, _pid}} = Mock.with_expectations do
-      # TODO make _some_pid something special to mean "the mock's pid" so we can verify it
-      expect_call some_call(_some_pid, "you", "me"), reply: :ok_by_me
+      expect_call some_call(_some_pid, you, "me"), reply: :ok_by_me
     end
 
     {:ok, mut} = ModuleUnderTest.start_link(mock_dependency)
