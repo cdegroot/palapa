@@ -15,7 +15,13 @@ defmodule Simpler.Mock.Server do
     import ExUnit.Assertions
     case GenServer.call(pid, {:__verify__}) do
       [] -> :ok
-      msgs -> flunk("Expected all calls to be seen, but still have some expectations left:\n\n#{inspect msgs}\n")
+      msgs ->
+        non_any = Enum.filter(msgs, fn({_call, args, opts}) ->
+          opts[:times] != :any
+        end)
+        if length(non_any) > 0 do
+          flunk("Expected all calls to be seen, but still have some expectations left:\n\n#{inspect msgs}\n")
+        end
     end
   end
 
@@ -40,8 +46,18 @@ defmodule Simpler.Mock.Server do
     if index == nil do
       raise "No matching expectation found for #{inspect func}(#{inspect args})"
     else
-      {_f, _a, reply} = Enum.at(state, index)
-      rest = List.delete_at(state, index)
+      {_f, _a, options} = Enum.at(state, index)
+      reply = options[:reply]
+      times = options[:times] || 1
+      times_left = if times == :any, do: :any, else: times - 1
+      rest = if times_left == 0 do
+        List.delete_at(state, index)
+      else
+        # Write back the times left, now decremented
+        List.update_at(state, index, fn({func, args, options}) ->
+          {func, args, Keyword.put(options, :times, times_left)}
+        end)
+      end
       {:reply, reply, rest}
     end
   end

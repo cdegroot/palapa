@@ -62,10 +62,10 @@ defmodule Simpler.Mock do
   defp statements(statement), do: [statement]
 
   defp call_to_message([{message, _, args}]) do
-    {message, protect_vars_in_args(args), :ok}
+    {message, protect_vars_in_args(args), [reply: :ok]}
   end
-  defp call_to_message([{message, _, args}, [reply: canned_reply]]) do
-    {message, protect_vars_in_args(args), canned_reply}
+  defp call_to_message([{message, _, args}, options]) do
+    {message, protect_vars_in_args(args), options}
   end
   # Bad name. In any case, when we use a variable with an underscore, that
   # signifies a "don't care" value. We splice it back not as a variable, but
