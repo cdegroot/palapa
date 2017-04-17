@@ -36,19 +36,22 @@ defmodule Erix.StateTest do
   """
 
   test "Initial state has the correct values" do
-    {:ok, server_persistence} = Mock.with_expectations do
-      expect_call fetch_current_term(_pid), reply: 0
-      expect_call fetch_voted_for(_pid), reply: nil
-      expect_call fetch_log(_pid), reply: []
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call voted_for(_pid), reply: nil
+      expect_call log_last_offset(_pid), reply: nil
+      expect_call log_at(_pid, _offset), reply: nil, times: 5
     end
-    {:ok, server} = Erix.Server.start_link(server_persistence)
 
+    {:ok, server} = Erix.Server.start_link(db)
+
+    state = Erix.Server.__fortest__getstate(server)
     # Verify initial stable state - this must come from persistence
     # hence the expectations above we verify at the end of the test
-    state = Erix.Server.__fortest__getstate(server)
-    assert state.current_term == 0
-    assert state.voted_for == nil
-    assert state.log == []
+    assert Erix.Server.PersistentState.current_term(state) == 0
+    assert Erix.Server.PersistentState.voted_for(state) == nil
+    assert Erix.Server.PersistentState.log_last_offset(state) == 0
+    for i <- 1..5, do: assert Erix.Server.PersistentState.log_at(i, state) == {0, nil}
 
     # Verify initial volatile state
     assert state.commit_index == 0
@@ -57,6 +60,6 @@ defmodule Erix.StateTest do
     # Verify that the server is a follower
     assert state.state == :follower
 
-    Mock.verify(server_persistence)
+    Mock.verify(db)
   end
 end

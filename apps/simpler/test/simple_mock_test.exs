@@ -57,6 +57,12 @@ defmodule SimpleMockTest do
     Mock.verify(mock_dependency)
   end
 
+  test "no mock works" do
+    {:ok, mock_dependency} = Mock.with_expectations do
+    end
+    Mock.verify(mock_dependency)
+  end
+
   test "n times works" do
     {:ok, mock_dependency = {_mod, _pid}} = Mock.with_expectations do
       expect_call some_call(_some_pid, "you", "me"), reply: :ok_by_me, times: 5

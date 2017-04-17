@@ -4,6 +4,7 @@ defmodule Erix.Server.Leader do
   """
   require Logger
   use Erix.Constants
+  import Erix.Server.PersistentState
   import Simpler.TestSupport
 
   defmodule State do
@@ -24,7 +25,7 @@ defmodule Erix.Server.Leader do
   end
 
   deft make_leader_state(state) do
-    {_, last_index} = get_last_term_and_index(state)
+    {_, last_index} = get_last_term_and_offset(state)
     next_index = Map.new(state.peers, fn(p) -> {p, last_index + 1} end)
     match_index = Map.new(state.peers, fn(p) -> {p, 0} end)
     leader_state = %State{next_index: next_index, match_index: match_index}
@@ -41,7 +42,7 @@ defmodule Erix.Server.Leader do
   # with `transition_from` that maybe needs cleanup.
   def add_peer(peer, state) do
     peers = [peer | state.peers]
-    {_, last_index} = get_last_term_and_index(state)
+    {_, last_index} = get_last_term_and_offset(state)
     next_index = Map.put(state.current_state_data.next_index, peer, last_index + 1)
     match_index = Map.put(state.current_state_data.next_index, peer, 0)
     leader_state = %State{next_index: next_index, match_index: match_index}
@@ -50,13 +51,11 @@ defmodule Erix.Server.Leader do
 
   def client_command(client_id, command_id, terms_to_log, state) do
     # Append to log
-    # TODO persist log
-    new_log = state.log ++ [{state.current_term, terms_to_log}]
-    state = %{state | log: new_log}
+    state = append_entries_to_log(log_last_offset(state) + 1, [{current_term(state), terms_to_log}], state)
     # Make a note when we can reply to the client.
     leader_state = state.current_state_data
     client_memo = {client_id, command_id}
-    client_replies = Map.update(leader_state.client_replies, get_last_index(state),
+    client_replies = Map.update(leader_state.client_replies, log_last_offset(state),
       [client_memo],
       fn(cur) -> [client_memo | cur] end)
     state = %{state | current_state_data: %{leader_state | client_replies: client_replies}}
@@ -69,7 +68,7 @@ defmodule Erix.Server.Leader do
   then we transition to follower
   """
   def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
-    if term > state.current_term do
+    if term > current_term(state) do
       mod = Erix.Server.state_module(:follower)
       state = mod.transition_from(state.state, state)
       # Let the follower state handle the actual call
@@ -77,22 +76,24 @@ defmodule Erix.Server.Leader do
     end
   end
 
-  def append_entries_reply(from, term, _repl, state = %Erix.Server.State{current_term: current_term})
-  when term > current_term do
-    if term > state.current_term do
-      mod = Erix.Server.state_module(:follower)
-      # TODO persist current_term
-      mod.transition_from(state.state, %{state | current_term: term})
-    end
+  def append_entries_reply(from, term, reply, state) do
+    current_term = current_term(state)
+    do_append_entries_reply(from, term, reply, current_term, state)
   end
-  def append_entries_reply(from, term, false, state) do
+  defp do_append_entries_reply(from, term, _repl, current_term, state)
+  when term > current_term do
+    mod = Erix.Server.state_module(:follower)
+    state = set_current_term(term, state)
+    mod.transition_from(state.state, state)
+  end
+  defp do_append_entries_reply(from, _term, false, current_term, state) do
     leader_state = state.current_state_data
     last_ping = Map.delete(leader_state.last_ping, from)
     next_index = Map.update!(leader_state.next_index, from, fn(cur) -> cur - 1 end)
     %{state | current_state_data: %{leader_state | last_ping: last_ping, next_index: next_index}}
     # TODO maybe ping right away? For now, we ping again.
   end
-  def append_entries_reply(from, term, true, state) do
+  defp do_append_entries_reply(from, _term, true, current_term, state) do
     leader_state = state.current_state_data
     outstanding_index = Map.get(leader_state.last_ping, from)
     if outstanding_index != nil do
@@ -100,7 +101,7 @@ defmodule Erix.Server.Leader do
       match_index = Map.put(leader_state.match_index, from, outstanding_index)
       next_index = Map.put(leader_state.next_index, from, outstanding_index + 1)
       # If this forwards the committed_index, do so
-      commit_index = calculate_commit_index(match_index, get_last_index(state), state.commit_index)
+      commit_index = calculate_commit_index(match_index, log_last_offset(state), state.commit_index)
       # If this moves the committed_index past outstanding client replies, send replies.
       client_replies = reply_to_clients(leader_state.client_replies, commit_index)
       # Save state
@@ -121,22 +122,23 @@ defmodule Erix.Server.Leader do
 
   deft ping_peers(state) do
     leader_state = state.current_state_data
-    last_index = get_last_index(state)
+    last_index = log_last_offset(state)
+    current_term = current_term(state)
     new_last_pings = state.peers
     |> Enum.map(fn({mod, pid} = peer) ->
       # Make sure we only ever have one outstanding appendEntries.
       current_ping = Map.get(leader_state.last_ping, peer)
       if current_ping == nil do
         next_index = Map.get(state.current_state_data.next_index, peer)
-        entries_to_send = Enum.slice(state.log, (next_index - 1)..-1)
+        entries_to_send = log_from(next_index, state)
         prev_log_term = if next_index > 1 do
-          # -1 because we move from next to previous; -1 to move from 1-base to 0-base
-          {term, _} = Enum.at(state.log, next_index - 1 - 1)
+          # -1 because we move from next to previous
+          {term, _} = log_at(next_index - 1, state)
           term
         else
           0
         end
-        mod.request_append_entries(pid, state.current_term, {Erix.Server, self()},
+        mod.request_append_entries(pid, current_term, {Erix.Server, self()},
           next_index - 1,
           prev_log_term,
           entries_to_send,
@@ -151,15 +153,10 @@ defmodule Erix.Server.Leader do
     %{state | current_state_data: %{leader_state | last_ping: last_ping}}
   end
 
-  defp get_last_index(state), do: length(state.log)
-  defp get_last_term_and_index(state) do
-    last_index = get_last_index(state)
-    last_term = if last_index > 0 do
-      last_log = Enum.at(state.log, last_index - 1)
-    else
-      0
-    end
-    {last_term, last_index}
+  defp get_last_term_and_offset(state) do
+    last_offset = log_last_offset(state)
+    {last_term, _} = log_at(last_offset, state)
+    {last_term, last_offset}
   end
 
   # Send a reply to every client that has outstanding replies

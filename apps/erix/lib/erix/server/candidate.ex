@@ -4,6 +4,8 @@ defmodule Erix.Server.Candidate do
   """
   require Logger
   use Erix.Constants
+  import Erix.Server.PersistentState
+
   @behaviour Erix.Server
 
   defmodule State do
@@ -26,31 +28,38 @@ defmodule Erix.Server.Candidate do
   @doc "Become a candidate"
   def transition_from(_, state) do
     candidate_state = %State{election_start: state.current_time, vote_count: 1}
-    # TODO persist current_term
     state = %{state | state: :candidate,
-              current_term: state.current_term + 1,
               current_state_data: candidate_state}
+    current_term = current_term(state) + 1
+    set_current_term(current_term, state)
+    last_log_index = log_last_offset(state)
+    {last_log_term, _} = log_at(last_log_index, state)
     state.peers
     |> Enum.map(fn({mod, pid}) ->
-      # TODO: the fourth argument is incorrect.
-      mod.request_vote(pid, state.current_term, self(), length(state.log), 0)
+      mod.request_vote(pid, current_term, self(), last_log_index, last_log_term)
     end)
     state
   end
 
-  def vote_reply(term, vote_granted, state = %Erix.Server.State{current_term: current_term}) when term > current_term do
-    mod = Erix.Server.state_module(:follower)
-    # TODO persist current_term
-    mod.transition_from(state.state, %{state | current_term: term})
-  end
   def vote_reply(term, vote_granted, state) do
-    vote_count = state.current_state_data.vote_count + 1
-    peer_count = length(state.peers)
-    if vote_count / peer_count > 0.5 do
-      mod = Erix.Server.state_module(:leader)
-      mod.transition_from(:candidate, state)
+    if term > current_term(state) do
+      mod = Erix.Server.state_module(:follower)
+      state = set_current_term(term, state)
+      mod.transition_from(state.state, state)
     else
-      %{state | current_state_data: %{state.current_state_data | vote_count: vote_count}}
+      # TODO just noticed we never looked at vote_granted, check test coverage
+      if vote_granted do
+        vote_count = state.current_state_data.vote_count + 1
+        peer_count = length(state.peers)
+        if vote_count / peer_count > 0.5 do
+          mod = Erix.Server.state_module(:leader)
+          mod.transition_from(:candidate, state)
+        else
+          %{state | current_state_data: %{state.current_state_data | vote_count: vote_count}}
+        end
+      else
+        state
+      end
     end
   end
 

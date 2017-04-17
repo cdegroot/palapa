@@ -12,19 +12,16 @@ defmodule Erix.Server do
 
   defmodule State do
     defstruct state: nil,
-      persistence_mod: nil, persistence_pid: nil,
-      current_term: 0,
+      persistent_state: nil,
       peers: [],
-      voted_for: nil,
-      log: [], # TODO smarter data structure
       commit_index: 0, last_applied: 0,
       current_time: -1,
       last_heartbeat_seen: -1,
       current_state_data: nil
   end
 
-  def start_link(persistence_ref = {_mod, _pid}) do
-    GenServer.start_link(__MODULE__, {persistence_ref})
+  def start_link(persistence_ref) do
+    GenServer.start_link(__MODULE__, persistence_ref)
   end
 
   @doc "Given a state tag, return the module implementing it"
@@ -77,9 +74,9 @@ defmodule Erix.Server do
 
   # Server implementation
 
-  def init({_persistence_ref = {pmod, ppid}}) do
-    initial_state = %State{state: :follower, persistence_mod: pmod, persistence_pid: ppid}
-    state = read_from_persistence(initial_state)
+  def init(persistence_ref) do
+    initial_state = %State{state: :follower}
+    state = Erix.Server.PersistentState.initialize_persistence(persistence_ref, initial_state)
     {:ok, state}
   end
 
@@ -117,7 +114,7 @@ defmodule Erix.Server do
     {:noreply, mod.request_vote(term, candidate_id, last_log_index, last_log_term, state)}
   end
 
-  @callback vote_reply(state :: %State{}) :: %State{}
+  @callback vote_reply(term :: integer, vote_granted :: boolean, state :: %State{}) :: %State{}
 
   def handle_cast({:vote_reply, term, vote_granted}, state) do
     mod = state_module(state.state)
@@ -139,19 +136,5 @@ defmodule Erix.Server do
   def handle_cast({:append_entries_reply, from, term, success}, state) do
     mod = state_module(state.state)
     {:noreply, mod.append_entries_reply(from, term, success, state)}
-  end
-
-  # Helper stuff
-
-  defp read_from_persistence(state) do
-    if state.persistence_mod != nil do
-      current_term = state.persistence_mod.fetch_current_term(state.persistence_pid)
-      voted_for = state.persistence_mod.fetch_voted_for(state.persistence_pid)
-      log = state.persistence_mod.fetch_log(state.persistence_pid)
-      %{state | current_term: current_term, voted_for: voted_for, log: log}
-    else
-      Logger.warn("Initializing server without persistence module!")
-      state
-    end
   end
 end

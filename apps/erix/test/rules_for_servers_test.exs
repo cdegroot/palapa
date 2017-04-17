@@ -1,5 +1,6 @@
 defmodule Erix.RulesForServersTest do
   use ExUnit.Case, async: true
+  use Simpler.Mock
 
   @moduledoc """
   All Servers:
@@ -10,134 +11,260 @@ defmodule Erix.RulesForServersTest do
   """
 
   test "Follower accepts term if a newer term is seen in appendEntries request" do
-    server = ServerMaker.new_follower()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call append_entries_to_log(_pid, 1, [])
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_follower(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Follower accepts term if a newer term is seen in appendEntries reply" do
-    server = ServerMaker.new_follower()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_follower(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Follower accepts term if a newer term is seen in requestVote" do
-    server = ServerMaker.new_follower()
     leader = {Erix.Server, self()}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+      expect_call current_term(_pid), reply: 2
+      expect_call voted_for(_pid), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_voted_for(_pid, leader)
+    end
+    server = ServerMaker.new_follower(db)
 
     Erix.Server.request_vote(server, 2, leader, 0, 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Follower accepts term if a newer term is seen in vote reply" do
-    server = ServerMaker.new_follower()
     leader = {Erix.Server, self()}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_follower(db)
 
     Erix.Server.vote_reply(server, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Candidate becomes follower if a newer term is seen in appendEntries request" do
-    server = ServerMaker.new_candidate()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call append_entries_to_log(_pid, 1, [])
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_candidate(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Candidate becomes follower if a newer term is seen in appendEntries reply" do
-    server = ServerMaker.new_candidate()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_candidate(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Candidate becomes follower if a newer term is seen in requestVote" do
-    server = ServerMaker.new_candidate()
     leader = {Erix.Server, self()}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+      expect_call current_term(_pid), reply: 2
+      expect_call voted_for(_pid), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_voted_for(_pid, leader)
+    end
+    server = ServerMaker.new_candidate(db)
 
     Erix.Server.request_vote(server, 2, leader, 0, 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Candidate becomes follower if a newer term is seen in vote reply" do
-    server = ServerMaker.new_candidate()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_candidate(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.vote_reply(server, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Leader becomes follower if a newer term is seen in appendEntries request" do
-    server = ServerMaker.new_leader()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call current_term(_pid), reply: 1
+      expect_call log_from(_pid, 1), reply: []
+      expect_call current_term(_pid), reply: 1
+      expect_call current_term(_pid), reply: 1
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call append_entries_to_log(_pid, 1, [])
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_leader(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Leader becomes follower if a newer term is seen in appendEntries reply" do
-    server = ServerMaker.new_leader()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call current_term(_pid), reply: 1
+      expect_call log_from(_pid, 1), reply: []
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_leader(db)
     leader = {Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Leader becomes follower if a newer term is seen in requestVote" do
-    server = ServerMaker.new_leader()
     leader = {Erix.Server, self()}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call current_term(_pid), reply: 1
+      expect_call log_from(_pid, 1), reply: []
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+      expect_call current_term(_pid), reply: 2
+      expect_call voted_for(_pid), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call set_voted_for(_pid, leader)
+    end
+    server = ServerMaker.new_leader(db)
 
     Erix.Server.request_vote(server, 2, leader, 0, 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 
   test "Leader becomes follower if a newer term is seen in vote reply" do
-    server = ServerMaker.new_leader()
     leader = {Erix.Server, self()}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 1
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call current_term(_pid), reply: 1
+      expect_call log_from(_pid, 1), reply: []
+      expect_call current_term(_pid), reply: 1
+      expect_call set_current_term(_pid, 2)
+    end
+    server = ServerMaker.new_leader(db)
 
     Erix.Server.vote_reply(server, 2, true)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
-    assert state.current_term == 2
+    Mock.verify(db)
   end
 end

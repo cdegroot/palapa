@@ -28,7 +28,7 @@ defmodule Simpler.Mock do
     {caller_fun, _arity} = __CALLER__.function
     random_module_name = Integer.to_string(:rand.uniform(100000000000))
     mock_module = Module.concat([caller_mod, caller_fun, random_module_name])
-    result = statements(opts[:do])
+    result = statements(opts[:do] || [])
     |> Enum.map(fn({:expect_call, _, expectation}) ->
       {msg, args, reply} = call_to_message(expectation)
       args = args || []
@@ -58,6 +58,7 @@ defmodule Simpler.Mock do
 
   # Private stuff
 
+  defp statements([]), do: []
   defp statements({:__block__, _, statements}), do: statements
   defp statements(statement), do: [statement]
 

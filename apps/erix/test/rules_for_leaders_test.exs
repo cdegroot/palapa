@@ -27,24 +27,38 @@ defmodule Erix.RulesForLeadersTest do
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 0, _self, 0, 0, [], 0)
     end
-    state = %Erix.Server.State{peers: [follower]}
+    {:ok, db} = Mock.with_expectations do
+      expect_call log_last_offset(_pid), reply: nil, times: 2
+      expect_call log_at(_pid, 0), reply: nil
+      expect_call current_term(_pid), reply: 0
+      expect_call log_from(_pid, 1), reply: nil
+    end
+    state = Erix.Server.PersistentState.initialize_persistence(db, %Erix.Server.State{peers: [follower]})
 
     Erix.Server.Leader.transition_from(:candidate, state)
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 
   test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 0, _self, 0, 0, [], 0)
     end
-    state = %Erix.Server.State{}
+    {:ok, db} = Mock.with_expectations do
+      expect_call log_last_offset(_pid), reply: nil, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+      expect_call current_term(_pid), reply: 0, times: :any
+      expect_call log_from(_pid, 1), reply: nil, times: :any
+    end
+    state = Erix.Server.PersistentState.initialize_persistence(db, %Erix.Server.State{})
     state = Erix.Server.Leader.transition_from(:candidate, state)
     state = Erix.Server.Leader.add_peer(follower, state)
 
     Erix.Server.Leader.tick(state)
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 
   test "apply command from clients to state machine, then respond" do
@@ -56,15 +70,23 @@ defmodule Erix.RulesForLeadersTest do
     {:ok, client} = Mock.with_expectations do
       expect_call command_completed(_pid, 12345)
     end
-    state = %Erix.Server.State{}
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: 0, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: 4
+      expect_call log_at(_pid, 0), reply: nil, times: 2
+      expect_call log_from(_pid, 1), reply: [{0, {:some, "stuff"}}]
+      expect_call log_last_offset(_pid), reply: 1, times: :any
+      expect_call append_entries_to_log(_pid, 1, [{0, {:some, "stuff"}}])
+    end
+    state = Erix.Server.PersistentState.initialize_persistence(db, %Erix.Server.State{})
     state = Erix.Server.Leader.transition_from(:candidate, state)
     state = Erix.Server.Leader.add_peer(follower, state)
 
     state = Erix.Server.Leader.client_command(client, 12345, {:some, "stuff"}, state)
-    # Appended to local log
-    assert state.log == [{0, {:some, "stuff"}}]
+
     # Broadcasted to followers
     Mock.verify(follower)
+
     # Committed when quorum write.
     state = Erix.Server.Leader.append_entries_reply(follower, 0, true, state)
     # check next_index, commit_index
@@ -82,37 +104,59 @@ defmodule Erix.RulesForLeadersTest do
 
     # We also shouldn't have outstanding client replies by now
     assert Map.size(leader_state.client_replies) == 0
+
+    # Everything should be persisted
+    Mock.verify(db)
   end
 
   test "A negative append entries reply decrements next index and pings again" do
     leader = {Erix.Server, self()}
-    Logger.error("Leader = #{inspect leader}")
+    {:ok, db} = Mock.with_expectations do
+      expect_call log_last_offset(_pid), reply: 6
+      expect_call log_at(_pid, 6), reply: {3, "I am number 6"}
+      expect_call log_last_offset(_pid), reply: 6
+      expect_call current_term(_pid), reply: 3
+      expect_call log_from(_pid, 7), reply: []
+      expect_call log_at(_pid, 6), reply: {3, "I am number 6"}
+      expect_call current_term(_pid), reply: 3
+      expect_call log_last_offset(_pid), reply: 6
+      expect_call current_term(_pid), reply: 3
+      expect_call log_from(_pid, 6), reply: [{3, "I am number 6"}]
+      expect_call log_at(_pid, 5), reply: {2, "Me is 5"}
+    end
     {:ok, follower} = Mock.with_expectations do
       # This call is made on the transition from candidate
       expect_call request_append_entries(_pid, 3, leader, 6, 3, [], 5)
       # This call is made on the false response
-      expect_call request_append_entries(_pid, 3, leader, 5, 2, [{3, 6}], 5)
+      expect_call request_append_entries(_pid, 3, leader, 5, 2, [{3, "I am number 6"}], 5)
     end
-    log = [{0, 1}, {1, 12}, {1, 13}, {2, 4}, {2, 5}, {3, 6}]
-    state = %Erix.Server.State{current_term: 3, commit_index: 5, log: log,
-                               last_applied: 6, peers: [follower]}
+    state = Erix.Server.PersistentState.initialize_persistence(db,
+      %Erix.Server.State{commit_index: 5, last_applied: 6, peers: [follower]})
     state = Erix.Server.Leader.transition_from(:candidate, state)
 
     state = Erix.Server.Leader.append_entries_reply(follower, 3, false, state)
     Erix.Server.Leader.ping_peers(state)
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 
   test "Send AppendEntries if last log index >= nextIndex for a follower" do
     leader = {Erix.Server, self()}
-    log = [{0, 1}, {1, 12}, {1, 13}, {2, 4}, {2, 5}, {3, 6}]
-    expected_log = Enum.slice(log, 4..-1)
+    {:ok, db} = Mock.with_expectations do
+      expect_call log_last_offset(_pid), reply: 6
+      expect_call log_at(_pid, 6), reply: {3, "I am number 6"}
+      expect_call log_last_offset(_pid), reply: 6
+      expect_call current_term(_pid), reply: 3
+      expect_call log_from(_pid, 5), reply: [{2, "Me is 5"}, {3, "I am number 6"}]
+      expect_call log_at(_pid, 4), reply: {2, "And here is 2 squared"}
+    end
+    expected_log = [{2, "Me is 5"}, {3, "I am number 6"}]
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 3, leader, 4, 2, expected_log, 5)
     end
-    state = %Erix.Server.State{current_term: 3, commit_index: 5, log: log,
-                               last_applied: 6, peers: [follower]}
+    state = Erix.Server.PersistentState.initialize_persistence(db,
+      %Erix.Server.State{commit_index: 5, last_applied: 6, peers: [follower]})
     state = Erix.Server.Leader.make_leader_state(state)
     leader_state = state.current_state_data
     next_index = Map.put(leader_state.next_index, follower, 5)
@@ -121,5 +165,6 @@ defmodule Erix.RulesForLeadersTest do
     Erix.Server.Leader.ping_peers(state)
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 end

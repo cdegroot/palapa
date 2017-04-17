@@ -12,8 +12,13 @@ defmodule Erix.RulesForFollowersTest do
   """
 
   test "Followers will start an election after the election timeout elapses" do
-    server_persistence = {nil, nil}
-    {:ok, server} = Erix.Server.start_link(server_persistence)
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: nil
+      expect_call log_at(_pid, 0), reply: nil
+    end
+    {:ok, server} = Erix.Server.start_link(db)
 
     assert Erix.Server.__fortest__getstate(server).state == :follower
 

@@ -17,7 +17,13 @@ defmodule Erix.RulesForCandidatesTest do
   """
 
   test "A new candidate starts an election" do
-    server = ServerMaker.new_primed_for_candidate()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
+    end
+    server = ServerMaker.new_primed_for_candidate(db)
     {:ok, follower} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
     end
@@ -28,15 +34,24 @@ defmodule Erix.RulesForCandidatesTest do
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :candidate
-    assert state.current_term == 1
+    #assert state.current_term == 1
     assert state.current_state_data.vote_count == 1 # Immediately vote for self
     assert state.current_state_data.election_start == state.current_time
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 
   test "Become leader if a majority of votes received" do
-    server = ServerMaker.new_primed_for_candidate()
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call current_term(_pid), reply: 1, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+      expect_call log_from(_pid, 1), reply: [], times: 2
+    end
+    server = ServerMaker.new_primed_for_candidate(db)
     {:ok, follower_one} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
       expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
@@ -58,22 +73,50 @@ defmodule Erix.RulesForCandidatesTest do
     # should now be a leader
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :leader
+
+    Mock.verify(db)
+    Mock.verify(follower_one)
+    Mock.verify(follower_two)
   end
 
   test "Candidate that receives AppendEntries becomes a follower" do
     {:ok, peer} = Mock.with_expectations do
-      expect_call append_entries_reply(_pid, _from, 1, false)
+      expect_call append_entries_reply(_pid, _from, 1, true)
     end
-    server = ServerMaker.new_candidate()
+    {:ok, db} = Mock.with_expectations do
+      # Basic candidate setup.
+      # TODO There's duplication here. Can Simpler help?
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call current_term(_pid), reply: 1, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+      # Reception of the AppendEntries RPC
+      expect_call append_entries_to_log(_pid, 1, [])
+    end
+    server = ServerMaker.new_candidate(db)
 
     Erix.Server.request_append_entries(server, 1, peer, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
+
+    Mock.verify(db)
+    Mock.verify(peer)
   end
 
   test "If an election timeout elapses, a new election is started" do
-    server = ServerMaker.new_candidate()
+    {:ok, db} = Mock.with_expectations do
+      # Basic candidate setup.
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call current_term(_pid), reply: 1
+      # This happens after the timeout
+      expect_call set_current_term(_pid, 2)
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+    end
+    server = ServerMaker.new_candidate(db)
     {:ok, follower} = Mock.with_expectations do
       # Expect the second vote request
       expect_call request_vote(_pid, 2, server, 0, 0), reply: :ok
@@ -89,9 +132,9 @@ defmodule Erix.RulesForCandidatesTest do
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :candidate
-    assert 2 == state.current_term
     assert election_start < state.current_state_data.election_start
 
     Mock.verify(follower)
+    Mock.verify(db)
   end
 end

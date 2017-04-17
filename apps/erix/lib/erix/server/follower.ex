@@ -4,6 +4,8 @@ defmodule Erix.Server.Follower do
   """
   require Logger
   use Erix.Constants
+  import Erix.Server.PersistentState
+
   @behaviour Erix.Server
 
   def tick(state) do
@@ -17,34 +19,33 @@ defmodule Erix.Server.Follower do
 
   defdelegate add_peer(peer_id, state), to: Erix.Server.Common
 
-  def request_append_entries(term, leader_id, _, _, _, _, state = %Erix.Server.State{current_term: current_term})
-  when term < current_term do
-    {mod, pid} = leader_id
-    # Bad term, send the current term back
-    mod.append_entries_reply(pid, {Erix.Server, self()}, state.current_term, false)
-    state
-  end
   def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
-    {mod, pid} = leader_id
-    prev_log_entry = if length(state.log) >= prev_log_index do
-      Enum.at(state.log, prev_log_index - 1)
+    current_term = current_term(state)
+    if term < current_term do
+      {mod, pid} = leader_id
+      # Bad term, send the current term back
+      mod.append_entries_reply(pid, {Erix.Server, self()}, current_term, false)
+      state
     else
-      nil
+      {mod, pid} = leader_id
+      {reply, state} = case log_at(prev_log_index, state) do
+        nil ->
+          {false, state}
+        {pl_term, _} when pl_term != prev_log_term ->
+          {false, state}
+        _ ->
+          state = append_entries_to_log(prev_log_index + 1, entries, state)
+          state = update_commit_index(leader_commit, state)
+          {true, state}
+      end
+      mod.append_entries_reply(pid, {Erix.Server, self()}, current_term, reply)
+      # Term is same or newer. If it's newer, we're supposed to adopt it.
+      if term > current_term do
+        set_current_term(term, state)
+      else
+        state
+      end
     end
-    {reply, state} = case prev_log_entry do
-      nil ->
-        {false, state}
-      {pl_term, _} when pl_term != prev_log_term ->
-        {false, state}
-      _ ->
-        state = append_entries_to_log(prev_log_index, entries, state)
-        state = update_commit_index(leader_commit, state)
-        {true, state}
-    end
-    mod.append_entries_reply(pid, {Erix.Server, self()}, state.current_term, reply)
-    # Term is same or newer. If it's newer, we're supposed to adopt it.
-    # TODO: Persist current_term
-    %{state | current_term: term}
   end
 
   defdelegate append_entries_reply(from, term, reply, state), to: Erix.Server.Common
@@ -57,20 +58,8 @@ defmodule Erix.Server.Follower do
 
   defdelegate vote_reply(term, vote_granted, state), to: Erix.Server.Common
 
-  defp append_entries_to_log(prev_log_index, entries, state) do
-    # TODO persist log (synchronously, before responding)
-
-    # This is a bit of a shortcut, but it should work - if we agree on the previous
-    # log index, we can basically truncate our log and append the new entries. It does
-    # not really matter what we had before, as long as we agree with the leader. This line
-    # basically step 3. and 4. of the AppendEntries RPC receiver specification.
-    new_log = Enum.slice(state.log, 0, prev_log_index) ++ entries
-    %{state | log: new_log}
-  end
-
   defp update_commit_index(leader_commit, state) do
-    new_commit_index = min(leader_commit, length(state.log))
+    new_commit_index = min(leader_commit, log_last_offset(state))
     %{state | commit_index: new_commit_index}
   end
-
 end

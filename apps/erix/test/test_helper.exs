@@ -2,24 +2,23 @@ ExUnit.start()
 
 defmodule ServerMaker do
   use Erix.Constants
-  def new_follower do
-    server_persistence = {nil, nil}
-    {:ok, server} = Erix.Server.start_link(server_persistence)
+  def new_follower(persistence) do
+    {:ok, server} = Erix.Server.start_link(persistence)
     server
   end
-  def new_primed_for_candidate do
-    server = new_follower()
+  def new_primed_for_candidate(persistence) do
+    server = new_follower(persistence)
     for _ <- 1..@heartbeat_timeout_ticks, do: Erix.Server.tick(server)
     server
   end
-  def new_candidate do
-    server = new_primed_for_candidate()
+  def new_candidate(persistence) do
+    server = new_primed_for_candidate(persistence)
     Erix.Server.tick(server)
     ensure_is(server, :candidate)
     server
   end
-  def new_leader do
-    server = new_candidate()
+  def new_leader(persistence) do
+    server = new_candidate(persistence)
     Erix.Server.add_peer(server, {Erix.Server, self()})
     Erix.Server.vote_reply(server, 0, true)
     ensure_is(server, :leader)
