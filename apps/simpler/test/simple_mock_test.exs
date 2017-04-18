@@ -57,6 +57,17 @@ defmodule SimpleMockTest do
     Mock.verify(mock_dependency)
   end
 
+  test "default reply works" do
+    {:ok, mock_dependency = {_mod, _pid}} = Mock.with_expectations do
+      expect_call some_call(_some_pid, "you", "me")
+    end
+    {:ok, mut} = ModuleUnderTest.start_link(mock_dependency)
+
+    assert :ok == ModuleUnderTest.do_something_with_dependency(mut)
+
+    Mock.verify(mock_dependency)
+  end
+
   test "no mock works" do
     {:ok, mock_dependency} = Mock.with_expectations do
     end
