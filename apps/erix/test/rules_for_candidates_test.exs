@@ -79,6 +79,81 @@ defmodule Erix.RulesForCandidatesTest do
     Mock.verify(follower_two)
   end
 
+  test "Stay candidate while no quorum" do
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call current_term(_pid), reply: 1, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+    end
+    server = ServerMaker.new_primed_for_candidate(db)
+    {:ok, follower_one} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    {:ok, follower_two} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    {:ok, follower_three} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    {:ok, follower_four} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    Erix.Server.add_peer(server, follower_one)
+    Erix.Server.add_peer(server, follower_two)
+    Erix.Server.add_peer(server, follower_three)
+    Erix.Server.add_peer(server, follower_four)
+
+    # Convert to candidate
+    Erix.Server.tick(server)
+
+    # Have one of the followers respond with a positive vote
+    Erix.Server.vote_reply(server, 1, true)
+
+    # Two out of five is not a quorum, so we're still a candidate
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.state == :candidate
+
+    Mock.verify(db)
+    Mock.verify(follower_one)
+    Mock.verify(follower_two)
+    Mock.verify(follower_three)
+    Mock.verify(follower_four)
+  end
+
+  test "Ignore false votes" do
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call set_current_term(_pid, 1)
+      expect_call current_term(_pid), reply: 1, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+    end
+    server = ServerMaker.new_primed_for_candidate(db)
+    {:ok, follower_one} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    {:ok, follower_two} = Mock.with_expectations do
+      expect_call request_vote(_pid, 1, server, 0, 0)
+    end
+    Erix.Server.add_peer(server, follower_one)
+    Erix.Server.add_peer(server, follower_two)
+
+    # Convert to candidate
+    Erix.Server.tick(server)
+
+    # Have one of the followers respond with a negative vote
+    Erix.Server.vote_reply(server, 1, false)
+
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.state == :candidate
+
+    Mock.verify(db)
+    Mock.verify(follower_one)
+    Mock.verify(follower_two)
+  end
+
   test "Candidate that receives AppendEntries becomes a follower" do
     {:ok, peer} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 1, true)
