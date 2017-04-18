@@ -10,7 +10,7 @@ defmodule Erix.Server.Follower do
 
   def tick(state) do
     if state.current_time - state.last_heartbeat_seen > @heartbeat_timeout_ticks do
-      Logger.debug("heartbeat timeout #{state.current_time} last #{state.last_heartbeat_seen}")
+      Logger.debug("#{inspect self()} heartbeat timeout #{state.current_time} last #{state.last_heartbeat_seen}")
       target = Erix.Server.state_module(:candidate)
       target.transition_from(:follower, state, "heartbeat timeout")
     else

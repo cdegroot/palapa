@@ -51,13 +51,7 @@ defmodule Erix.NodeTest do
     Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 1)})
     Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 2)})
 
-    #Process.sleep(10)
-    #contexts |> Enum.map(fn(context) ->
-      #pid = Process.whereis(context[:node_name])
-      #state = Erix.Server.__fortest__getstate(pid)
-    #end)
-
-    Process.sleep(500)
+    Process.sleep(500) # 25 ticks should be enough to get a leader
 
     pids |> Enum.map(fn(pid) ->
       assert Process.alive?(pid)
