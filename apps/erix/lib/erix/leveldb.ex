@@ -13,6 +13,13 @@ defmodule Erix.LevelDB do
   @voted_key              <<-2 :: size(64)>>
   @last_offset_key        <<-3 :: size(64)>>
 
+  @doc "Opens the database with the indicated filename"
+  def open(name) do
+    Exleveldb.open(name)
+  end
+
+  # PersistentState callbacks
+
   def current_term(db) do
     case Exleveldb.get(db, @current_term_key) do
       :not_found -> 0
