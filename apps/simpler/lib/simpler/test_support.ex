@@ -9,8 +9,6 @@ defmodule Simpler.TestSupport do
   defmacro deft(call, expr \\ nil) do
     if Mix.env == :test do
       quote do: def(unquote(call), unquote(expr))
-    else
-      quote do: defp(unquote(call), unquote(expr))
     end
   end
 end

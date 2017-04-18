@@ -26,8 +26,6 @@ defmodule Simpler.Mock do
     # TODO try to expand variables - if they resolve to a value, use these
     caller_mod = __CALLER__.module
     {caller_fun, _arity} = __CALLER__.function
-    random_module_name = Integer.to_string(:rand.uniform(100000000000))
-    mock_module = Module.concat([caller_mod, caller_fun, random_module_name])
     result = statements(opts[:do] || [])
     |> Enum.map(fn({:expect_call, _, expectation}) ->
       {msg, args, reply} = call_to_message(expectation)
@@ -45,9 +43,11 @@ defmodule Simpler.Mock do
       {:ok, pid} = Simpler.Mock.Server.start_link()
       putattr = quote do: Module.put_attribute(__MODULE__, :pid, unquote(pid))
       forwarders = [putattr | unquote(forwarders)]
-      Module.create(unquote(mock_module), forwarders, Macro.Env.location(__ENV__))
+      random_module_name = Integer.to_string(:rand.uniform(100000000000))
+      mock_module = Module.concat([unquote(caller_mod), unquote(caller_fun), random_module_name])
+      Module.create(mock_module, forwarders, Macro.Env.location(__ENV__))
       unquote_splicing(expectations)
-      {:ok, {unquote(mock_module), pid}}
+      {:ok, {mock_module, pid}}
     end
   end
 

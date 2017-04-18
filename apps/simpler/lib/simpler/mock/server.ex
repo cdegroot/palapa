@@ -16,7 +16,7 @@ defmodule Simpler.Mock.Server do
     case GenServer.call(pid, {:__verify__}) do
       [] -> :ok
       msgs ->
-        non_any = Enum.filter(msgs, fn({_call, args, opts}) ->
+        non_any = Enum.filter(msgs, fn({_call, _args, opts}) ->
           opts[:times] != :any
         end)
         if length(non_any) > 0 do

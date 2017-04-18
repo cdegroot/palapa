@@ -24,12 +24,15 @@ defmodule Erix.Server.Leader do
     ping_peers(state)
   end
 
-  deft make_leader_state(state) do
+  defp make_leader_state(state) do
     {_, last_index} = get_last_term_and_offset(state)
     next_index = Map.new(state.peers, fn(p) -> {p, last_index + 1} end)
     match_index = Map.new(state.peers, fn(p) -> {p, 0} end)
     leader_state = %State{next_index: next_index, match_index: match_index}
-    state = %{state | state: :leader, current_state_data: leader_state}
+    %{state | state: :leader, current_state_data: leader_state}
+  end
+  deft _make_leader_state(state) do
+    make_leader_state(state)
   end
 
   def tick(state) do
@@ -80,20 +83,20 @@ defmodule Erix.Server.Leader do
     current_term = current_term(state)
     do_append_entries_reply(from, term, reply, current_term, state)
   end
-  defp do_append_entries_reply(from, term, _repl, current_term, state)
+  defp do_append_entries_reply(_from, term, _repl, current_term, state)
   when term > current_term do
     mod = Erix.Server.state_module(:follower)
     state = set_current_term(term, state)
     mod.transition_from(state.state, state)
   end
-  defp do_append_entries_reply(from, _term, false, current_term, state) do
+  defp do_append_entries_reply(from, _term, false, _current_term, state) do
     leader_state = state.current_state_data
     last_ping = Map.delete(leader_state.last_ping, from)
     next_index = Map.update!(leader_state.next_index, from, fn(cur) -> cur - 1 end)
     %{state | current_state_data: %{leader_state | last_ping: last_ping, next_index: next_index}}
     # TODO maybe ping right away? For now, we ping again.
   end
-  defp do_append_entries_reply(from, _term, true, current_term, state) do
+  defp do_append_entries_reply(from, _term, true, _current_term, state) do
     leader_state = state.current_state_data
     outstanding_index = Map.get(leader_state.last_ping, from)
     if outstanding_index != nil do
@@ -120,7 +123,7 @@ defmodule Erix.Server.Leader do
 
   defdelegate vote_reply(pid, vote_granted, term), to: Erix.Server.Common
 
-  deft ping_peers(state) do
+  defp ping_peers(state) do
     leader_state = state.current_state_data
     last_index = log_last_offset(state)
     current_term = current_term(state)
@@ -152,6 +155,7 @@ defmodule Erix.Server.Leader do
     last_ping = Map.new(new_last_pings)
     %{state | current_state_data: %{leader_state | last_ping: last_ping}}
   end
+  deft _ping_peers(state), do: ping_peers(state)
 
   defp get_last_term_and_offset(state) do
     last_offset = log_last_offset(state)
@@ -186,7 +190,7 @@ defmodule Erix.Server.Leader do
   # match_index: the map of match index values for our peers, their committed offsets
   # last_index: the highest offset in our local log, our committed offset
   # commit_index: the current offset we have consensus for.
-  deft calculate_commit_index(match_index, last_index, commit_index) do
+  defp calculate_commit_index(match_index, last_index, commit_index) do
     quorum = Float.floor(1 + (0.5 * Map.size(match_index)))
     votes = [last_index | Map.values(match_index)]
     # Stupid simple algorithm - just count forward from the commit_index and see
@@ -202,5 +206,8 @@ defmodule Erix.Server.Leader do
         {:halt, acc}
       end
     end)
+  end
+  deft _calculate_commit_index(match_index, last_index, commit_index) do
+    calculate_commit_index(match_index, last_index, commit_index)
   end
  end

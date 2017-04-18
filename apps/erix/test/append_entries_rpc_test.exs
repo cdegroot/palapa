@@ -44,7 +44,7 @@ defmodule Erix.AppendEntriesRpcTest do
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 42
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
     Erix.Server.Follower.request_append_entries(41, peer, 0, 0, [], 0, state)
 
     Mock.verify(peer)
@@ -59,7 +59,7 @@ defmodule Erix.AppendEntriesRpcTest do
       expect_call current_term(_pid), reply: 42
       expect_call log_at(_pid, 2), reply: {41, "bar"}
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
     #state = Erix.Server.Persistence.append_entries_to_log(0, [{41, "foo"}, {41, "bar"}], state)
     Erix.Server.Follower.request_append_entries(42, peer, 2, 42, [], 0, state)
     Mock.verify(peer)
@@ -76,7 +76,7 @@ defmodule Erix.AppendEntriesRpcTest do
       expect_call append_entries_to_log(_pid, 3, [{42, "mybaz"}, {42, "quux"}])
       expect_call log_last_offset(_pid), reply: 4
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
     Erix.Server.Follower.request_append_entries(42, peer,
       2,
       42,
@@ -96,7 +96,7 @@ defmodule Erix.AppendEntriesRpcTest do
       expect_call append_entries_to_log(_pid, 4, [{42, "mybaz"}, {42, "quux"}])
       expect_call log_last_offset(_pid), reply: 5
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{commit_index: 2})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{commit_index: 2})
     state = Erix.Server.Follower.request_append_entries(42, peer,
       3, 42, [{42, "mybaz"}, {42, "quux"}],
       20,

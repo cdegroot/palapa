@@ -29,7 +29,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call current_term(_pid), reply: 33, times: :any
       expect_call set_voted_for(_pid, nil)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(20, mock_peer, 0, 0, state)
 
@@ -49,7 +49,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call log_last_offset(_pid), reply: 3
       expect_call set_voted_for(_pid, nil)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
 
@@ -69,7 +69,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call log_last_offset(_pid), reply: 3
       expect_call set_voted_for(_pid, nil)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
 
@@ -88,7 +88,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call log_at(_pid, 3), reply: {32, "baz"}
       expect_call set_voted_for(_pid, nil)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(33, mock_peer, 3, 31, state)
 
@@ -107,7 +107,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call log_last_offset(_pid), reply: nil
       expect_call set_voted_for(_pid, mock_peer)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
 
@@ -125,7 +125,7 @@ defmodule Erix.RequestVoteRpcTest do
       expect_call log_at(_pid, 3), reply: {32, "baz"}
       expect_call set_voted_for(_pid, mock_peer)
     end
-    state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{state: :follower})
+    state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
     Erix.Server.Common.request_vote(33, mock_peer, 3, 32, state)
 

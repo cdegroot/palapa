@@ -135,7 +135,7 @@ defmodule Erix.RulesForLeadersTest do
     state = Erix.Server.Leader.transition_from(:candidate, state)
 
     state = Erix.Server.Leader.append_entries_reply(follower, 3, false, state)
-    Erix.Server.Leader.ping_peers(state)
+    Erix.Server.Leader._ping_peers(state)
 
     Mock.verify(follower)
     Mock.verify(db)
@@ -157,12 +157,12 @@ defmodule Erix.RulesForLeadersTest do
     end
     state = Erix.Server.PersistentState.initialize_persistence(db,
       %Erix.Server.State{commit_index: 5, last_applied: 6, peers: [follower]})
-    state = Erix.Server.Leader.make_leader_state(state)
+    state = Erix.Server.Leader._make_leader_state(state)
     leader_state = state.current_state_data
     next_index = Map.put(leader_state.next_index, follower, 5)
     state = %{state | current_state_data: %{leader_state | next_index: next_index}}
 
-    Erix.Server.Leader.ping_peers(state)
+    Erix.Server.Leader._ping_peers(state)
 
     Mock.verify(follower)
     Mock.verify(db)

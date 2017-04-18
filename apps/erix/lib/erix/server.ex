@@ -85,8 +85,8 @@ defmodule Erix.Server do
   def handle_call(:__fortest__getstate, _from, state) do
     {:reply, state, state}
   end
-  def handle_call({:__fortest__setpersister, persister}, _from, state) do
-    {:reply, :ok, Erix.Server.PersistentState.set_persister(persister, state)}
+  deft handle_call({:__fortest__setpersister, persister}, _from, state) do
+    {:reply, :ok, Erix.Server.PersistentState._set_persister(persister, state)}
   end
 
   # Most of the calls here are state-specific; they forward to the

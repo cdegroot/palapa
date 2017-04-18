@@ -16,6 +16,10 @@ defmodule Erix.Server.Common do
     %{state | peers: [peer_id | state.peers]}
   end
 
+  def tick(_state) do
+    raise "This function should not be called!"
+  end
+
   def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
     current_term = current_term(state)
     if term > current_term do
@@ -56,6 +60,10 @@ defmodule Erix.Server.Common do
       voted_for = if will_vote, do: candidate_id, else: nil
       set_voted_for(voted_for, state)
     end
+  end
+
+  def request_append_entries(_term, _leader_id, _prev_log_index, _prev_log_term, _entries, _leader_commit, _state) do
+    raise "This function should not be called!"
   end
 
   def append_entries_reply(_from, term, _reply, state) do
