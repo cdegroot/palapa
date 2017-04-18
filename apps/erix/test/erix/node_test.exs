@@ -1,5 +1,7 @@
 defmodule Erix.NodeTest do
   use ExUnit.Case, async: true
+  require Logger
+
   @moduletag :integration
 
   setup do
@@ -41,28 +43,29 @@ defmodule Erix.NodeTest do
   test "Three nodes elect a leader" do
     contexts = for _ <- 1..3, do: do_setup()
     pids = contexts |> Enum.map(fn(context) ->
-      {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name], 20)
+      {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name], 50)
       pid
     end)
     # Pear up
-    # TODO make add_peer return peering info so we only need two links.
-    if false do
-    Erix.Server.add_peer(Enum.at(pids, 1), Enum.at(pids, 0))
-    Erix.Server.add_peer(Enum.at(pids, 0), Enum.at(pids, 1))
-    Erix.Server.add_peer(Enum.at(pids, 2), Enum.at(pids, 0))
-    Erix.Server.add_peer(Enum.at(pids, 0), Enum.at(pids, 2))
-    Erix.Server.add_peer(Enum.at(pids, 1), Enum.at(pids, 2))
-    Erix.Server.add_peer(Enum.at(pids, 2), Enum.at(pids, 1))
+    names = contexts |> Enum.map(fn(context) -> context[:node_name] end)
+    Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 1)})
+    Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 2)})
 
-    Process.sleep(500)
+    Process.sleep(10)
+    contexts |> Enum.map(fn(context) ->
+      pid = Process.whereis(context[:node_name])
+      state = Erix.Server.__fortest__getstate(pid)
+    end)
+
+    Process.sleep(1000)
 
     pids |> Enum.map(fn(pid) ->
       assert Process.alive?(pid)
     end)
-    contexts |> Enum.map(fn(context) ->
+    {f, l} = contexts |> Enum.reduce({0, 0}, fn(context, {f, l}) ->
       state = Erix.Server.__fortest__getstate(context[:node_name])
-      IO.puts("node=#{inspect context} state=#{inspect state}")
+      if state.state == :leader, do: {f, l + 1}, else: {f + 1, l}
     end)
-    end
+    assert {f, l} == {2, 1}
   end
 end

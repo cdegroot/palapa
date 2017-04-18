@@ -13,7 +13,11 @@ defmodule Erix.Server.Common do
   @behaviour Erix.Server
 
   def add_peer({new_peer_mod, new_peer_pid} = new_peer_ref, state) do
-    state = if Enum.any?(state.peers, fn(p) -> p == new_peer_ref end) do
+    # TODO this is a bit messy. This happens because our self references are PIDs and
+    # external node references are probably going to be names. Find a cleaner solution,
+    # most likely by giving every peer some UUID - then we can stop caring about how peers
+    # look from various angle, in-process, local, or remote.
+    state = if Enum.any?(state.peers, fn({m, p}) -> m == new_peer_mod && real_pid(p) == real_pid(new_peer_pid) end) do
       state
     else
       # New node. Be nice, send our peers back for quick convergence.
@@ -25,6 +29,7 @@ defmodule Erix.Server.Common do
       %{state | peers: [new_peer_ref | state.peers]}
     end
   end
+  defp real_pid(pid), do: if is_atom(pid), do: Process.whereis(pid), else: pid
 
   def tick(_state) do
     raise "This function should not be called!"
@@ -64,6 +69,8 @@ defmodule Erix.Server.Common do
               end
             end
           end
+        else
+          false
         end
       end
       mod.vote_reply(pid, current_term, will_vote)
@@ -72,8 +79,8 @@ defmodule Erix.Server.Common do
     end
   end
 
-  def request_append_entries(_term, _leader_id, _prev_log_index, _prev_log_term, _entries, _leader_commit, _state) do
-    raise "This function should not be called!"
+  def request_append_entries(term, _leader_id, _prev_log_index, _prev_log_term, _entries, _leader_commit, state) do
+    upgrade_term_if_newer_seen(term, state)
   end
 
   def append_entries_reply(_from, term, _reply, state) do
@@ -84,12 +91,13 @@ defmodule Erix.Server.Common do
     upgrade_term_if_newer_seen(term, state)
   end
 
-  defp upgrade_term_if_newer_seen(term, state) do
+  def upgrade_term_if_newer_seen(term, state) do
     if term > current_term(state) do
       state = set_current_term(term, state)
       module = Erix.Server.state_module(:follower)
-      # TODO persist current term
       module.transition_from(state.state, state)
+    else
+      state
     end
   end
 end

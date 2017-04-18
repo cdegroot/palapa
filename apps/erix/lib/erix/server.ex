@@ -21,7 +21,7 @@ defmodule Erix.Server do
   end
 
   def start_link(persistence_ref) do
-    GenServer.start_link(__MODULE__, persistence_ref)
+    GenServer.start_link(__MODULE__, persistence_ref) #, [debug: [:statistics, :trace]])
   end
 
   @doc "Given a state tag, return the module implementing it"
@@ -106,7 +106,6 @@ defmodule Erix.Server do
     mod = state_module(state.state)
     {:noreply, mod.add_peer(peer_id, state)}
   end
-
 
   @callback request_vote(term :: integer, candidate_id :: peer_ref, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
 

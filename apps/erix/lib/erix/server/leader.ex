@@ -74,6 +74,8 @@ defmodule Erix.Server.Leader do
       state = mod.transition_from(state.state, state)
       # Let the follower state handle the actual call
       mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
+    else
+      state
     end
   end
 

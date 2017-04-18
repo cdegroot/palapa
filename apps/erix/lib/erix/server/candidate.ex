@@ -42,7 +42,7 @@ defmodule Erix.Server.Candidate do
       {last_log_term, _} = log_at(last_log_index, state)
       state.peers
       |> Enum.map(fn({mod, pid}) ->
-        mod.request_vote(pid, current_term, self(), last_log_index, last_log_term)
+        mod.request_vote(pid, current_term, {Erix.Server, self()}, last_log_index, last_log_term)
       end)
       state
     end
