@@ -5,7 +5,7 @@ defmodule Erix.TimerTest do
   test "A process gets roughly the correct amount of ticks" do
     {:ok, agent} = Agent.start_link(fn -> 0 end)
     updater = fn -> Agent.update(agent, fn(x) -> x + 1 end) end
-    {:ok, process} = Erix.Timer.start_link(25, updater)
+    {:ok, _process} = Erix.Timer.start_link(25, updater)
 
     Process.sleep(250)
 

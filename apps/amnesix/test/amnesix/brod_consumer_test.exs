@@ -21,7 +21,12 @@ defmodule Amnesix.BrodConsumerTest do
 
   test "subscriber hooks up to Brod and gets partitions assigned" do
     {:ok, _pid} = BrodConsumer.start_link({MockWorkersSupervisor, self()})
-    assert_partitions_eventually_load
+    assert_partitions_eventually_load()
+  end
+
+  test "post load, partitions are subscribed to and messages flow" do
+    {:ok, _pid} = BrodConsumer.start_link({MockWorkersSupervisor, self()})
+    # TODO complete this test.
   end
 
   defp assert_partitions_eventually_load do
@@ -30,17 +35,12 @@ defmodule Amnesix.BrodConsumerTest do
     receive do
       :remove ->
         Logger.debug("Got remove, retrying")
-        assert_partitions_eventually_load
+        assert_partitions_eventually_load()
       {:load, [0, 1]} ->
         Logger.debug("Got load, all good")
         :ok
     after
       10_000 -> flunk "Timeout waiting for partition load"
     end
-  end
-
-  test "post load, partitions are subscribed to and messages flow" do
-    {:ok, _pid} = BrodConsumer.start_link({MockWorkersSupervisor, self()})
-    # TODO complete this test.
   end
 end
