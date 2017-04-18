@@ -122,6 +122,25 @@ defmodule Erix.RulesForCandidatesTest do
     Mock.verify(follower_four)
   end
 
+  test "Without followers, elections are easy to win" do
+    {:ok, db} = Mock.with_expectations do
+      expect_call current_term(_pid), reply: nil
+      expect_call current_term(_pid), reply: 1, times: :any
+      expect_call log_last_offset(_pid), reply: 0, times: :any
+      expect_call log_at(_pid, 0), reply: nil, times: :any
+    end
+    server = ServerMaker.new_primed_for_candidate(db)
+
+    # Convert to candidate
+    Erix.Server.tick(server)
+
+    # And we should be a leader right away
+    state = Erix.Server.__fortest__getstate(server)
+    assert state.state == :leader
+
+    Mock.verify(db)
+  end
+
   test "Ignore false votes" do
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: nil

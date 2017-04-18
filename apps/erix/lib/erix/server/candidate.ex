@@ -27,18 +27,25 @@ defmodule Erix.Server.Candidate do
 
   @doc "Become a candidate"
   def transition_from(_, state) do
-    candidate_state = %State{election_start: state.current_time, vote_count: 1}
-    state = %{state | state: :candidate,
-              current_state_data: candidate_state}
-    current_term = current_term(state) + 1
-    set_current_term(current_term, state)
-    last_log_index = log_last_offset(state)
-    {last_log_term, _} = log_at(last_log_index, state)
-    state.peers
-    |> Enum.map(fn({mod, pid}) ->
-      mod.request_vote(pid, current_term, self(), last_log_index, last_log_term)
-    end)
-    state
+    if length(state.peers) == 0 do
+      # Short-circuit into leader if we don't have any peers
+      mod = Erix.Server.state_module(:leader)
+      mod.transition_from(:candidate, state)
+    else
+      # Nope, we need real elections
+      candidate_state = %State{election_start: state.current_time, vote_count: 1}
+      state = %{state | state: :candidate,
+                current_state_data: candidate_state}
+      current_term = current_term(state) + 1
+      set_current_term(current_term, state)
+      last_log_index = log_last_offset(state)
+      {last_log_term, _} = log_at(last_log_index, state)
+      state.peers
+      |> Enum.map(fn({mod, pid}) ->
+        mod.request_vote(pid, current_term, self(), last_log_index, last_log_term)
+      end)
+      state
+    end
   end
 
   def vote_reply(term, vote_granted, state) do
