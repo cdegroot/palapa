@@ -20,7 +20,7 @@ defmodule Erix.Mixfile do
   end
 
   defp deps do
-    [{:eleveldb, "~> 2.2"},
+    [{:exleveldb, "~> 0.11.0"},
      {:simpler, in_umbrella: true}]
   end
 end

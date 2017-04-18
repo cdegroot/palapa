@@ -6,6 +6,7 @@
   "eleveldb": {:hex, :eleveldb, "2.2.20", "1fff63a5055bbf4bf821f797ef76065882b193f5e8095f95fcd9287187773b58", [:rebar3], []},
   "excoveralls": {:hex, :excoveralls, "0.6.3", "894bf9254890a4aac1d1165da08145a72700ff42d8cb6ce8195a584cb2a4b374", [:mix], [{:exjsx, "~> 3.0", [hex: :exjsx, optional: false]}, {:hackney, ">= 0.12.0", [hex: :hackney, optional: false]}]},
   "exjsx": {:hex, :exjsx, "3.2.1", "1bc5bf1e4fd249104178f0885030bcd75a4526f4d2a1e976f4b428d347614f0f", [:mix], [{:jsx, "~> 2.8.0", [hex: :jsx, optional: false]}]},
+  "exleveldb": {:hex, :exleveldb, "0.11.0", "e3d1b3ee2420f5bfea088068e0c63c0bb0cd5651da899fd5269c4c0127c87e2c", [:mix], [{:eleveldb, "~> 2.2.19", [hex: :eleveldb, optional: false]}]},
   "fs": {:hex, :fs, "2.12.0", "ad631efacc9a5683c8eaa1b274e24fa64a1b8eb30747e9595b93bec7e492e25e", [:rebar3], []},
   "graphmath": {:hex, :graphmath, "1.0.3", "ff961a5533fea4648ae47501ff241b4004ee719220d251abd44bc83f78f891bb", [:mix], []},
   "hackney": {:hex, :hackney, "1.7.1", "e238c52c5df3c3b16ce613d3a51c7220a784d734879b1e231c9babd433ac1cb4", [:rebar3], [{:certifi, "1.0.0", [hex: :certifi, optional: false]}, {:idna, "4.0.0", [hex: :idna, optional: false]}, {:metrics, "1.0.1", [hex: :metrics, optional: false]}, {:mimerl, "1.0.2", [hex: :mimerl, optional: false]}, {:ssl_verify_fun, "1.1.1", [hex: :ssl_verify_fun, optional: false]}]},
