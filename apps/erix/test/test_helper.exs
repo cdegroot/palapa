@@ -25,6 +25,7 @@ defmodule ServerMaker do
     end
     {:ok, follower} = Mock.with_expectations do
       # Eat everything
+      expect_call add_peer(_pid, _peer), times: :any
       expect_call request_vote(_pid, _term, _from, _last_log_index, _last_log_term), times: :any
       expect_call request_append_entries(_pid, _term, _leader, _prev_log_index, _prev_log_term, _entries, _leader_commit), times: :any
     end
@@ -39,6 +40,7 @@ defmodule ServerMaker do
   end
   def new_leader(persistence) do
     {:ok, db} = Mock.with_expectations do
+      expect_call add_peer(_pid, _peer), times: :any
       expect_call current_term(_pid), reply: 1
       expect_call log_last_offset(_pid), reply: 0
       expect_call log_at(_pid, 0), reply: nil

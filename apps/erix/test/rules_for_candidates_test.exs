@@ -26,6 +26,7 @@ defmodule Erix.RulesForCandidatesTest do
     server = ServerMaker.new_primed_for_candidate(db)
     {:ok, follower} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0), reply: :ok
+      expect_call add_peer(_pid, _peer), times: :any
     end
     Erix.Server.add_peer(server, follower)
 
@@ -55,10 +56,12 @@ defmodule Erix.RulesForCandidatesTest do
     {:ok, follower_one} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
       expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
       expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     Erix.Server.add_peer(server, follower_one)
     Erix.Server.add_peer(server, follower_two)
@@ -90,15 +93,19 @@ defmodule Erix.RulesForCandidatesTest do
     server = ServerMaker.new_primed_for_candidate(db)
     {:ok, follower_one} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_three} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_four} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     Erix.Server.add_peer(server, follower_one)
     Erix.Server.add_peer(server, follower_two)
@@ -152,9 +159,11 @@ defmodule Erix.RulesForCandidatesTest do
     server = ServerMaker.new_primed_for_candidate(db)
     {:ok, follower_one} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
       expect_call request_vote(_pid, 1, server, 0, 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     Erix.Server.add_peer(server, follower_one)
     Erix.Server.add_peer(server, follower_two)
@@ -205,6 +214,7 @@ defmodule Erix.RulesForCandidatesTest do
     {:ok, follower} = Mock.with_expectations do
       # Expect the second vote request
       expect_call request_vote(_pid, 2, server, 0, 0), reply: :ok
+      expect_call add_peer(_pid, _peer), times: :any
     end
     Erix.Server.add_peer(server, follower)
 

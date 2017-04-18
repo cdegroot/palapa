@@ -208,4 +208,26 @@ defmodule Erix.RulesForServersTest do
     assert state.state == :follower
     Mock.verify(db)
   end
+
+  test "Optimization: add_peer gets reciprocal call" do
+    {:ok, db} = Mock.with_expectations do
+    end
+    node = ServerMaker.new_follower(db)
+    {:ok, peer_one} = Mock.with_expectations do
+      expect_call add_peer(_self, {Erix.Server, node})
+    end
+    {:ok, peer_two} = Mock.with_expectations do
+      expect_call add_peer(_self, peer_one)
+      expect_call add_peer(_self, {Erix.Server, node})
+    end
+
+    Erix.Server.add_peer(node, peer_one)
+    Erix.Server.add_peer(node, peer_two)
+
+    Process.sleep(10) # Async stuff going on, wait a bit
+
+    Mock.verify(db)
+    Mock.verify(peer_one)
+    Mock.verify(peer_two)
+  end
 end

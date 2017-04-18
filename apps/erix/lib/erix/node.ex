@@ -14,10 +14,10 @@ defmodule Erix.Node do
   indicated node name so that remote nodes can access us through the `{name, node}`.
   destination.
   """
-  def start_link(db_module, db_name, node_name \\ :erix) do
+  def start_link(db_module, db_name, node_name \\ :erix, tick_time_ms \\ @default_tick_time_ms) do
     children = [
       Erix.Node.ServerWorker.worker_spec(db_module, db_name, node_name),
-      Erix.Node.TimerWorker.worker_spec(@default_tick_time_ms, node_name)
+      Erix.Node.TimerWorker.worker_spec(tick_time_ms, node_name)
     ]
     Supervisor.start_link(children, strategy: :one_for_one)
   end

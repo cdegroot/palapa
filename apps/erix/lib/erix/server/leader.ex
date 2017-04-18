@@ -40,16 +40,14 @@ defmodule Erix.Server.Leader do
     ping_peers(state)
   end
 
-  # Not sure whether this is allowed, but let's give it a shot. At the very
-  # least, makes testing a bit simpler. Note that there's some duplication
-  # with `transition_from` that maybe needs cleanup.
   def add_peer(peer, state) do
-    peers = [peer | state.peers]
+    state = Erix.Server.Common.add_peer(peer, state)
+    # Setup initial next/match index for peer
     {_, last_index} = get_last_term_and_offset(state)
     next_index = Map.put(state.current_state_data.next_index, peer, last_index + 1)
-    match_index = Map.put(state.current_state_data.next_index, peer, 0)
+    match_index = Map.put(state.current_state_data.match_index, peer, 0)
     leader_state = %State{next_index: next_index, match_index: match_index}
-    %{state | peers: peers, current_state_data: leader_state}
+    %{state | current_state_data: leader_state}
   end
 
   def client_command(client_id, command_id, terms_to_log, state) do

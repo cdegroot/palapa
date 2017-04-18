@@ -12,8 +12,18 @@ defmodule Erix.Server.Common do
 
   @behaviour Erix.Server
 
-  def add_peer(peer_id, state) do
-    %{state | peers: [peer_id | state.peers]}
+  def add_peer({new_peer_mod, new_peer_pid} = new_peer_ref, state) do
+    state = if Enum.any?(state.peers, fn(p) -> p == new_peer_ref end) do
+      state
+    else
+      # New node. Be nice, send our peers back for quick convergence.
+      state.peers
+      |> Enum.map(fn(peer) ->
+        new_peer_mod.add_peer(new_peer_pid, peer)
+      end)
+      new_peer_mod.add_peer(new_peer_pid, {Erix.Server, self()})
+      %{state | peers: [new_peer_ref | state.peers]}
+    end
   end
 
   def tick(_state) do

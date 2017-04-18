@@ -44,6 +44,7 @@ defmodule Erix.RulesForLeadersTest do
   test "empty AppendEntries RPCs are sent regularly to prevent election timeouts" do
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 0, _self, 0, 0, [], 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, db} = Mock.with_expectations do
       expect_call log_last_offset(_pid), reply: nil, times: :any
@@ -66,6 +67,7 @@ defmodule Erix.RulesForLeadersTest do
     # half the followers (including the leader, which just writes it to log)
     {:ok, follower} = Mock.with_expectations do
       expect_call request_append_entries(_pid, 0, _self, 0, 0, [{0, {:some, "stuff"}}], 0)
+      expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, client} = Mock.with_expectations do
       expect_call command_completed(_pid, 12345)
