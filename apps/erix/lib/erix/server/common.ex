@@ -42,7 +42,7 @@ defmodule Erix.Server.Common do
       # we were doing before.
       module = Erix.Server.state_module(:follower)
       state = set_current_term(term, state)
-      state = module.transition_from(state.state, state)
+      state = module.transition_from(state.state, state, "newer term in request_vote")
       # And then we can most likely positively reply
       request_vote(term, candidate_id, last_log_index, last_log_term, state)
     else
@@ -73,9 +73,11 @@ defmodule Erix.Server.Common do
           false
         end
       end
-      mod.vote_reply(pid, current_term, will_vote)
       voted_for = if will_vote, do: candidate_id, else: nil
-      set_voted_for(voted_for, state)
+      state = set_voted_for(voted_for, state)
+      Logger.debug("#{inspect self()} vote for: #{inspect voted_for} as #{will_vote}")
+      mod.vote_reply(pid, current_term, will_vote)
+      state
     end
   end
 
@@ -95,7 +97,7 @@ defmodule Erix.Server.Common do
     if term > current_term(state) do
       state = set_current_term(term, state)
       module = Erix.Server.state_module(:follower)
-      module.transition_from(state.state, state)
+      module.transition_from(state.state, state, "newer term seen in common")
     else
       state
     end

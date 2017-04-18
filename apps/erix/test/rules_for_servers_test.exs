@@ -114,10 +114,6 @@ defmodule Erix.RulesForServersTest do
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
-      expect_call current_term(_pid), reply: 2
-      expect_call voted_for(_pid), reply: nil
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call set_voted_for(_pid, leader)
     end
     server = ServerMaker.new_candidate(db)
 

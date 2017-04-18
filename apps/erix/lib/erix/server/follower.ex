@@ -10,8 +10,9 @@ defmodule Erix.Server.Follower do
 
   def tick(state) do
     if state.current_time - state.last_heartbeat_seen > @heartbeat_timeout_ticks do
+      Logger.debug("heartbeat timeout #{state.current_time} last #{state.last_heartbeat_seen}")
       target = Erix.Server.state_module(:candidate)
-      target.transition_from(:follower, state)
+      target.transition_from(:follower, state, "heartbeat timeout")
     else
       state
     end
@@ -21,7 +22,7 @@ defmodule Erix.Server.Follower do
 
   def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
     current_term = current_term(state)
-    if term < current_term do
+    state = if term < current_term do
       {mod, pid} = leader_id
       # Bad term, send the current term back
       mod.append_entries_reply(pid, {Erix.Server, self()}, current_term, false)
@@ -46,12 +47,14 @@ defmodule Erix.Server.Follower do
         state
       end
     end
+    %{state | last_heartbeat_seen: state.current_time}
   end
 
   defdelegate append_entries_reply(from, term, reply, state), to: Erix.Server.Common
 
-  def transition_from(_, state) do
-    %{state | state: :follower, current_state_data: nil}
+  def transition_from(old, state, reason \\ "unknown") do
+    Logger.info("#{inspect self()} transition from #{old} to follower: #{reason}")
+    %{state | state: :follower, current_state_data: nil, last_heartbeat_seen: state.current_time}
   end
 
   defdelegate request_vote(term, candidate_id, last_log_index, last_log_term, state), to: Erix.Server.Common

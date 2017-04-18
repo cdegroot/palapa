@@ -43,7 +43,7 @@ defmodule Erix.NodeTest do
   test "Three nodes elect a leader" do
     contexts = for _ <- 1..3, do: do_setup()
     pids = contexts |> Enum.map(fn(context) ->
-      {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name], 50)
+      {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name], 20)
       pid
     end)
     # Pear up
@@ -51,13 +51,13 @@ defmodule Erix.NodeTest do
     Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 1)})
     Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 2)})
 
-    Process.sleep(10)
-    contexts |> Enum.map(fn(context) ->
-      pid = Process.whereis(context[:node_name])
-      state = Erix.Server.__fortest__getstate(pid)
-    end)
+    #Process.sleep(10)
+    #contexts |> Enum.map(fn(context) ->
+      #pid = Process.whereis(context[:node_name])
+      #state = Erix.Server.__fortest__getstate(pid)
+    #end)
 
-    Process.sleep(1000)
+    Process.sleep(500)
 
     pids |> Enum.map(fn(pid) ->
       assert Process.alive?(pid)
