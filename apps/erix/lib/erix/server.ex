@@ -52,9 +52,6 @@ defmodule Erix.Server do
     GenServer.cast(pid, {:vote_reply, term, vote_granted})
   end
 
-  # This should not happen...
-
-
   @doc "Receive an AppendEntries RPC"
   def request_append_entries(pid, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit) do
     GenServer.cast(pid, {:request_append_entries, term, leader_id, prev_log_index, prev_log_term,
@@ -72,6 +69,10 @@ defmodule Erix.Server do
     GenServer.call(pid, :__fortest__getstate)
   end
 
+  deft __fortest__setpersister(pid, persister) do
+    GenServer.call(pid, {:__fortest__setpersister, persister})
+  end
+
   # Server implementation
 
   def init(persistence_ref) do
@@ -84,8 +85,8 @@ defmodule Erix.Server do
   def handle_call(:__fortest__getstate, _from, state) do
     {:reply, state, state}
   end
-  def handle_cast({:__fortest__setstate, state}, _state) do
-    {:noreply, state}
+  def handle_call({:__fortest__setpersister, persister}, _from, state) do
+    {:reply, :ok, Erix.Server.PersistentState.set_persister(persister, state)}
   end
 
   # Most of the calls here are state-specific; they forward to the

@@ -63,7 +63,6 @@ defmodule Erix.RulesForServersTest do
   end
 
   test "Follower accepts term if a newer term is seen in vote reply" do
-    leader = {Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 0
       expect_call set_current_term(_pid, 2)
@@ -79,10 +78,6 @@ defmodule Erix.RulesForServersTest do
 
   test "Candidate becomes follower if a newer term is seen in appendEntries request" do
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
       expect_call current_term(_pid), reply: 1
       expect_call log_at(_pid, 0), reply: nil
       expect_call append_entries_to_log(_pid, 1, [])
@@ -101,10 +96,6 @@ defmodule Erix.RulesForServersTest do
 
   test "Candidate becomes follower if a newer term is seen in appendEntries reply" do
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
     end
@@ -121,10 +112,6 @@ defmodule Erix.RulesForServersTest do
   test "Candidate becomes follower if a newer term is seen in requestVote" do
     leader = {Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
       expect_call current_term(_pid), reply: 2
@@ -143,15 +130,10 @@ defmodule Erix.RulesForServersTest do
 
   test "Candidate becomes follower if a newer term is seen in vote reply" do
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_candidate(db)
-    leader = {Erix.Server, self()}
 
     Erix.Server.vote_reply(server, 2, true)
 
@@ -162,16 +144,6 @@ defmodule Erix.RulesForServersTest do
 
   test "Leader becomes follower if a newer term is seen in appendEntries request" do
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call current_term(_pid), reply: 1
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call current_term(_pid), reply: 1
-      expect_call log_from(_pid, 1), reply: []
       expect_call current_term(_pid), reply: 1
       expect_call current_term(_pid), reply: 1
       expect_call log_at(_pid, 0), reply: nil
@@ -191,16 +163,6 @@ defmodule Erix.RulesForServersTest do
 
   test "Leader becomes follower if a newer term is seen in appendEntries reply" do
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call current_term(_pid), reply: 1
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call current_term(_pid), reply: 1
-      expect_call log_from(_pid, 1), reply: []
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
     end
@@ -217,16 +179,6 @@ defmodule Erix.RulesForServersTest do
   test "Leader becomes follower if a newer term is seen in requestVote" do
     leader = {Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call current_term(_pid), reply: 1
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call current_term(_pid), reply: 1
-      expect_call log_from(_pid, 1), reply: []
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
       expect_call current_term(_pid), reply: 2
@@ -244,18 +196,7 @@ defmodule Erix.RulesForServersTest do
   end
 
   test "Leader becomes follower if a newer term is seen in vote reply" do
-    leader = {Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
-      expect_call current_term(_pid), reply: 0
-      expect_call set_current_term(_pid, 1)
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call current_term(_pid), reply: 1
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call log_at(_pid, 0), reply: nil
-      expect_call log_last_offset(_pid), reply: 0
-      expect_call current_term(_pid), reply: 1
-      expect_call log_from(_pid, 1), reply: []
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
     end

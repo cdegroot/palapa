@@ -84,15 +84,10 @@ defmodule Erix.RulesForCandidatesTest do
       expect_call append_entries_reply(_pid, _from, 1, true)
     end
     {:ok, db} = Mock.with_expectations do
-      # Basic candidate setup.
-      # TODO There's duplication here. Can Simpler help?
-      expect_call current_term(_pid), reply: nil
-      expect_call set_current_term(_pid, 1)
-      expect_call current_term(_pid), reply: 1, times: :any
-      expect_call log_last_offset(_pid), reply: 0, times: :any
-      expect_call log_at(_pid, 0), reply: nil, times: :any
-      # Reception of the AppendEntries RPC
+      expect_call current_term(_pid), reply: 1
+      expect_call log_at(_pid, 0), reply: []
       expect_call append_entries_to_log(_pid, 1, [])
+      expect_call log_last_offset(_pid), reply: 0
     end
     server = ServerMaker.new_candidate(db)
 
@@ -107,14 +102,10 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "If an election timeout elapses, a new election is started" do
     {:ok, db} = Mock.with_expectations do
-      # Basic candidate setup.
-      expect_call current_term(_pid), reply: nil
-      expect_call set_current_term(_pid, 1)
       expect_call current_term(_pid), reply: 1
-      # This happens after the timeout
       expect_call set_current_term(_pid, 2)
-      expect_call log_last_offset(_pid), reply: 0, times: :any
-      expect_call log_at(_pid, 0), reply: nil, times: :any
+      expect_call log_last_offset(_pid), reply: 0
+      expect_call log_at(_pid, 0), reply: nil
     end
     server = ServerMaker.new_candidate(db)
     {:ok, follower} = Mock.with_expectations do

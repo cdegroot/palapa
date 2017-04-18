@@ -77,7 +77,7 @@ defmodule Erix.AppendEntriesRpcTest do
       expect_call log_last_offset(_pid), reply: 4
     end
     state = Erix.Server.PersistentState.set_persister(db, %Erix.Server.State{})
-    state = Erix.Server.Follower.request_append_entries(42, peer,
+    Erix.Server.Follower.request_append_entries(42, peer,
       2,
       42,
       [{42, "mybaz"}, {42, "quux"}], # this log conflicts with {43, "baz"}
