@@ -105,6 +105,20 @@ defmodule Erix.Server.PersistentState do
     state
   end
 
+  @callback node_uuid(pid :: pid) :: binary
+
+  @doc "Returns the uuid of the node"
+  def node_uuid(state) do
+    mod(state).node_uuid(pid(state))
+  end
+
+  @callback set_node_uuid(pid :: pid, uuid :: binary) :: any
+
+  @doc "Sets the uuid of the node"
+  def set_node_uuid(uuid, state) do
+    mod(state).set_node_uuid(pid(state), uuid)
+  end
+
   # Private functions
 
   defp persistent_state(state) do

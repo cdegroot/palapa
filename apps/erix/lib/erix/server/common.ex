@@ -7,35 +7,36 @@ defmodule Erix.Server.Common do
   """
   use Erix.Constants
   import Erix.Server.PersistentState
+  alias Erix.Server.Peer
 
   require Logger
 
   @behaviour Erix.Server
 
-  def add_peer({new_peer_mod, new_peer_pid} = new_peer_ref, state) do
-    # TODO this is a bit messy. This happens because our self references are PIDs and
-    # external node references are probably going to be names. Find a cleaner solution,
-    # most likely by giving every peer some UUID - then we can stop caring about how peers
-    # look from various angle, in-process, local, or remote.
-    state = if Enum.any?(state.peers, fn({m, p}) -> m == new_peer_mod && real_pid(p) == real_pid(new_peer_pid) end) do
+  def add_peer(new_peer, state) do
+    known_peer = state.peers
+    |> Enum.any?(fn(p) -> Peer.uuid_of(p) == Peer.uuid_of(new_peer) end)
+    state = if known_peer do
+      # Ignore known peers.
       state
     else
+      np_mod = Peer.module_of(new_peer)
+      np_pid = Peer.pid_of(new_peer)
       # New node. Be nice, send our peers back for quick convergence.
       state.peers
       |> Enum.map(fn(peer) ->
-        new_peer_mod.add_peer(new_peer_pid, peer)
+        np_mod.add_peer(np_pid, peer)
       end)
-      new_peer_mod.add_peer(new_peer_pid, {Erix.Server, self()})
-      %{state | peers: [new_peer_ref | state.peers]}
+      np_mod.add_peer(np_pid, Peer.self_peer(state))
+      %{state | peers: [new_peer | state.peers]}
     end
   end
-  defp real_pid(pid), do: if is_atom(pid), do: Process.whereis(pid), else: pid
 
   def tick(_state) do
     raise "This function should not be called!"
   end
 
-  def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
+  def request_vote(term, candidate, last_log_index, last_log_term, state) do
     current_term = current_term(state)
     if term > current_term do
       # We've seen a newer term - immediately transition to follower, no matter what
@@ -44,15 +45,14 @@ defmodule Erix.Server.Common do
       state = set_current_term(term, state)
       state = module.transition_from(state.state, state, "newer term in request_vote")
       # And then we can most likely positively reply
-      request_vote(term, candidate_id, last_log_index, last_log_term, state)
+      request_vote(term, candidate, last_log_index, last_log_term, state)
     else
-      {mod, pid} = candidate_id
       # TODO refactor this nested if/else hairball
       will_vote = if term < current_term do
         false
       else
         voted_for = voted_for(state)
-        if voted_for == nil or voted_for == candidate_id do
+        if voted_for == nil or voted_for == candidate do
           my_last_log_index = log_last_offset(state)
           if my_last_log_index > last_log_index do
             false
@@ -73,10 +73,11 @@ defmodule Erix.Server.Common do
           false
         end
       end
-      voted_for = if will_vote, do: candidate_id, else: nil
+      voted_for = if will_vote, do: candidate, else: nil
       state = set_voted_for(voted_for, state)
       Logger.debug("#{inspect self()} vote for: #{inspect voted_for} as #{will_vote}")
-      mod.vote_reply(pid, current_term, will_vote)
+      Peer.module_of(candidate).vote_reply(Peer.pid_of(candidate),
+        current_term, will_vote)
       state
     end
   end

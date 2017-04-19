@@ -11,6 +11,8 @@ defmodule Simpler.Mixfile do
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
+     description: "Tools for making testing simpler",
+     package: package(),
      deps: deps(),
      test_coverage: [tool: ExCoveralls]]
   end
@@ -24,7 +26,16 @@ defmodule Simpler.Mixfile do
     # want to be always available in stuff using Simpler.
     [{:credo, "~> 0.7", only: [:dev, :test]},
      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-     {:excoveralls, "~> 0.6", only: :test}]
+     {:excoveralls, "~> 0.6", only: :test},
+     {:ex_doc, ">= 0.0.0", only: :dev}]
     # No other dependencies - that's a bit of a design goal for now
+  end
+
+  defp package do
+    [
+      maintainers: ["Cees de Groot"],
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/cdegroot/palapa/tree/master/apps/simpler",
+               "Docs" => "http://hexdocs.pm/simpler"}]
   end
 end

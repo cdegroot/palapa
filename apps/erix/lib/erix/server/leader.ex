@@ -5,6 +5,7 @@ defmodule Erix.Server.Leader do
   require Logger
   use Erix.Constants
   import Erix.Server.PersistentState
+  alias Erix.Server.Peer
   import Simpler.TestSupport
 
   defmodule State do
@@ -129,7 +130,7 @@ defmodule Erix.Server.Leader do
     last_index = log_last_offset(state)
     current_term = current_term(state)
     new_last_pings = state.peers
-    |> Enum.map(fn({mod, pid} = peer) ->
+    |> Enum.map(fn(peer) ->
       # Make sure we only ever have one outstanding appendEntries.
       current_ping = Map.get(leader_state.last_ping, peer)
       if current_ping == nil do
@@ -142,7 +143,8 @@ defmodule Erix.Server.Leader do
         else
           0
         end
-        mod.request_append_entries(pid, current_term, {Erix.Server, self()},
+        Peer.module_of(peer).request_append_entries(Peer.pid_of(peer),
+          current_term, Peer.self_peer(state),
           next_index - 1,
           prev_log_term,
           entries_to_send,

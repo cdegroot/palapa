@@ -6,6 +6,7 @@ defmodule Erix.LevelDBTest do
   @current_term_key Erix.LevelDB._current_term_key()
   @voted_key        Erix.LevelDB._voted_key()
   @last_offset_key  Erix.LevelDB._last_offset_key()
+  @node_uuid_key    Erix.LevelDB._node_uuid_key()
 
   setup do
     name = "/tmp/erix_leveldb_test.#{:rand.uniform(1_000_000_000)}"
@@ -68,6 +69,22 @@ defmodule Erix.LevelDBTest do
 
     {:ok, bytes} = Exleveldb.get(db, @voted_key)
     assert ref == :erlang.binary_to_term(bytes)
+  end
+
+  test "Node UUID returns nil on an empty database", context do
+    {_, state} = state_and_db_from_context(context)
+
+    assert nil == PersistentState.node_uuid(state)
+  end
+
+  test "Node UUID correctly written to database", context do
+    {db, state} = state_and_db_from_context(context)
+    uuid = UUID.uuid4()
+
+    PersistentState.set_node_uuid(uuid, state)
+
+    {:ok, uuid_bytes} = Exleveldb.get(db, @node_uuid_key)
+    assert UUID.binary_to_string!(uuid_bytes) == uuid
   end
 
   test "Log last offset returns 0 on an empty database", context do

@@ -5,10 +5,11 @@ defmodule Erix.Server do
   use GenServer
   use Erix.Constants
   import Simpler.TestSupport
+  alias Erix.Server.PersistentState
+  alias Erix.Server.Peer
   require Logger
 
   @type log_entry :: {term :: integer, entry :: any}
-  @type peer_ref :: {module :: atom, pid :: pid}
 
   defmodule State do
     defstruct state: nil,
@@ -73,17 +74,27 @@ defmodule Erix.Server do
     GenServer.call(pid, {:__fortest__setpersister, persister})
   end
 
+  deft __fortest__getpeer(pid) do
+    GenServer.call(pid, :__fortest__getpeer)
+  end
+
   # Server implementation
 
   def init(persistence_ref) do
     initial_state = %State{state: :follower}
-    state = Erix.Server.PersistentState.initialize_persistence(persistence_ref, initial_state)
+    state = PersistentState.initialize_persistence(persistence_ref, initial_state)
+    if PersistentState.node_uuid(state) == nil do
+      PersistentState.set_node_uuid(UUID.uuid1(), state)
+    end
     {:ok, state}
   end
 
   # Testing support stuff
   def handle_call(:__fortest__getstate, _from, state) do
     {:reply, state, state}
+  end
+  def handle_call(:__fortest__getpeer, _from, state) do
+    {:reply, Peer.self_peer(state), state}
   end
   deft handle_call({:__fortest__setpersister, persister}, _from, state) do
     {:reply, :ok, Erix.Server.PersistentState._set_persister(persister, state)}
@@ -100,14 +111,14 @@ defmodule Erix.Server do
     {:noreply, mod.tick(state)}
   end
 
-  @callback add_peer(peer_id :: peer_ref, state :: %State{}) :: %State{}
+  @callback add_peer(peer_id :: Peer.t, state :: %State{}) :: %State{}
 
   def handle_cast({:add_peer, peer_id}, state) do
     mod = state_module(state.state)
     {:noreply, mod.add_peer(peer_id, state)}
   end
 
-  @callback request_vote(term :: integer, candidate_id :: peer_ref, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
+  @callback request_vote(term :: integer, candidate_id :: Peer.t, last_log_index :: integer, last_log_term :: integer, state :: %State{}) :: %State{}
 
   def handle_cast({:request_vote, term, candidate_id, last_log_index, last_log_term}, state) do
     mod = state_module(state.state)
@@ -122,7 +133,7 @@ defmodule Erix.Server do
   end
 
 
-  @callback request_append_entries(term :: integer, leader_id :: peer_ref, prev_log_index :: integer,
+  @callback request_append_entries(term :: integer, leader_id :: Peer.t, prev_log_index :: integer,
     prev_log_term :: integer, entries :: list(), leader_commit :: integer,
     state :: %State{}) :: %State{}
 
@@ -131,7 +142,7 @@ defmodule Erix.Server do
     {:noreply, mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)}
   end
 
-  @callback append_entries_reply(from :: peer_ref, term :: integer, success :: boolean, state :: %State{}) :: %State{}
+  @callback append_entries_reply(from :: Peer.t, term :: integer, success :: boolean, state :: %State{}) :: %State{}
 
   def handle_cast({:append_entries_reply, from, term, success}, state) do
     mod = state_module(state.state)

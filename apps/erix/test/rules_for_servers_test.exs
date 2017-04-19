@@ -1,6 +1,7 @@
 defmodule Erix.RulesForServersTest do
   use ExUnit.Case, async: true
   use Simpler.Mock
+  alias Erix.Server.Peer
 
   @moduledoc """
   All Servers:
@@ -12,6 +13,7 @@ defmodule Erix.RulesForServersTest do
 
   test "Follower accepts term if a newer term is seen in appendEntries request" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 0
       expect_call log_at(_pid, 0), reply: nil
       expect_call append_entries_to_log(_pid, 1, [])
@@ -19,7 +21,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_follower(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
@@ -34,7 +36,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_follower(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
@@ -44,7 +46,7 @@ defmodule Erix.RulesForServersTest do
   end
 
   test "Follower accepts term if a newer term is seen in requestVote" do
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 0
       expect_call set_current_term(_pid, 2)
@@ -78,6 +80,7 @@ defmodule Erix.RulesForServersTest do
 
   test "Candidate becomes follower if a newer term is seen in appendEntries request" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 1
       expect_call log_at(_pid, 0), reply: nil
       expect_call append_entries_to_log(_pid, 1, [])
@@ -85,7 +88,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_candidate(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
@@ -100,7 +103,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_candidate(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
@@ -110,7 +113,7 @@ defmodule Erix.RulesForServersTest do
   end
 
   test "Candidate becomes follower if a newer term is seen in requestVote" do
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
@@ -140,6 +143,7 @@ defmodule Erix.RulesForServersTest do
 
   test "Leader becomes follower if a newer term is seen in appendEntries request" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 1
       expect_call current_term(_pid), reply: 1
       expect_call log_at(_pid, 0), reply: nil
@@ -148,7 +152,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_leader(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.request_append_entries(server, 2, leader, 0, 0, [], 0)
 
@@ -163,7 +167,7 @@ defmodule Erix.RulesForServersTest do
       expect_call set_current_term(_pid, 2)
     end
     server = ServerMaker.new_leader(db)
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
 
     Erix.Server.append_entries_reply(server, leader, 2, true)
 
@@ -173,7 +177,7 @@ defmodule Erix.RulesForServersTest do
   end
 
   test "Leader becomes follower if a newer term is seen in requestVote" do
-    leader = {Erix.Server, self()}
+    leader = {UUID.uuid4(), Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
@@ -207,18 +211,22 @@ defmodule Erix.RulesForServersTest do
 
   test "Optimization: add_peer gets reciprocal call" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: UUID.uuid4(), times: :any
     end
     node = ServerMaker.new_follower(db)
+    node_peer = Erix.Server.__fortest__getpeer(node)
     {:ok, peer_one} = Mock.with_expectations do
-      expect_call add_peer(_self, {Erix.Server, node})
+      expect_call add_peer(_self, node_peer)
     end
+    node_one_peer = Peer.for_mock(peer_one)
     {:ok, peer_two} = Mock.with_expectations do
-      expect_call add_peer(_self, peer_one)
-      expect_call add_peer(_self, {Erix.Server, node})
+      expect_call add_peer(_self, node_one_peer)
+      expect_call add_peer(_self, node_peer)
     end
+    node_two_peer = Peer.for_mock(peer_two)
 
-    Erix.Server.add_peer(node, peer_one)
-    Erix.Server.add_peer(node, peer_two)
+    Erix.Server.add_peer(node, node_one_peer)
+    Erix.Server.add_peer(node, node_two_peer)
 
     Process.sleep(10) # Async stuff going on, wait a bit
 

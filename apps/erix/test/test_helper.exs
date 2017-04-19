@@ -1,10 +1,18 @@
 ExUnit.start()
 
 defmodule ServerMaker do
+  @fixed_uuid UUID.uuid4()
+  def fixed_uuid, do: @fixed_uuid
+
   use Erix.Constants
   use Simpler.Mock
+  alias Erix.Server.Peer
   def new_follower(persistence) do
-    {:ok, server} = Erix.Server.start_link(persistence)
+    {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: @fixed_uuid, times: :any
+    end
+    {:ok, server} = Erix.Server.start_link(db)
+    Erix.Server.__fortest__setpersister(server, persistence)
     server
   end
   def new_primed_for_candidate(persistence) do
@@ -18,6 +26,7 @@ defmodule ServerMaker do
     # won't vote. Tests need to realize that candidates and leaders
     # returned by this code will have a follower.
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: @fixed_uuid, times: :any
       expect_call current_term(_pid), reply: 0
       expect_call set_current_term(_pid, 1)
       expect_call log_last_offset(_pid), reply: 0
@@ -29,8 +38,9 @@ defmodule ServerMaker do
       expect_call request_vote(_pid, _term, _from, _last_log_index, _last_log_term), times: :any
       expect_call request_append_entries(_pid, _term, _leader, _prev_log_index, _prev_log_term, _entries, _leader_commit), times: :any
     end
+    follower_peer = Peer.for_mock(follower)
     server = new_primed_for_candidate(db)
-    Erix.Server.add_peer(server, follower)
+    Erix.Server.add_peer(server, follower_peer)
     # Tick into candidate mode
     Erix.Server.tick(server)
     ensure_is(server, :candidate)
@@ -47,9 +57,11 @@ defmodule ServerMaker do
       expect_call log_last_offset(_pid), reply: 0
       expect_call current_term(_pid), reply: 1
       expect_call log_from(_pid, 1), reply: [], times: :any
+      expect_call node_uuid(_pid), reply: @fixed_uuid, times: :any
     end
     server = new_candidate(db)
-    Erix.Server.add_peer(server, {Erix.Server, self()})
+    mock_peer = Peer.new(UUID.uuid4(), Erix.Server, self())
+    Erix.Server.add_peer(server, mock_peer)
     Erix.Server.vote_reply(server, 0, true)
     ensure_is(server, :leader)
     Erix.Server.__fortest__setpersister(server, persistence)

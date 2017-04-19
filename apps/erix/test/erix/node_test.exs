@@ -48,8 +48,9 @@ defmodule Erix.NodeTest do
     end)
     # Pear up
     names = contexts |> Enum.map(fn(context) -> context[:node_name] end)
-    Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 1)})
-    Erix.Server.add_peer(Enum.at(names, 0), {Erix.Server, Enum.at(names, 2)})
+    peers = names |> Enum.map(fn(name) -> Erix.Server.__fortest__getpeer(name) end)
+    Erix.Server.add_peer(Enum.at(names, 0), Enum.at(peers, 1))
+    Erix.Server.add_peer(Enum.at(names, 0), Enum.at(peers, 2))
 
     Process.sleep(500) # 25 ticks should be enough to get a leader
 

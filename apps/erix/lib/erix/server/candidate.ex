@@ -5,6 +5,7 @@ defmodule Erix.Server.Candidate do
   require Logger
   use Erix.Constants
   import Erix.Server.PersistentState
+  alias Erix.Server.Peer
 
   @behaviour Erix.Server
 
@@ -41,8 +42,10 @@ defmodule Erix.Server.Candidate do
       last_log_index = log_last_offset(state)
       {last_log_term, _} = log_at(last_log_index, state)
       state.peers
-      |> Enum.map(fn({mod, pid}) ->
-        mod.request_vote(pid, current_term, {Erix.Server, self()}, last_log_index, last_log_term)
+      |> Enum.map(fn(peer) ->
+        Peer.module_of(peer).request_vote(
+          Peer.pid_of(peer), current_term, Peer.self_peer(state),
+          last_log_index, last_log_term)
       end)
       state
     end

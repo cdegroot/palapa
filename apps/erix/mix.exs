@@ -21,6 +21,7 @@ defmodule Erix.Mixfile do
 
   defp deps do
     [{:exleveldb, "~> 0.11.0"},
+     {:uuid, "~> 1.1"},
      {:simpler, in_umbrella: true}]
   end
 end

@@ -2,6 +2,7 @@ defmodule Erix.RulesForCandidatesTest do
   use ExUnit.Case, async: true
   use Simpler.Mock
   use Erix.Constants
+  alias Erix.Server.Peer
 
   @moduledoc """
   Candidates (§5.2):
@@ -18,17 +19,19 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "A new candidate starts an election" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 1)
       expect_call log_last_offset(_pid), reply: 0
       expect_call log_at(_pid, 0), reply: nil
     end
     server = ServerMaker.new_primed_for_candidate(db)
+    server_peer = Erix.Server.__fortest__getpeer(server)
     {:ok, follower} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0), reply: :ok
+      expect_call request_vote(_pid, 1, server_peer, 0, 0), reply: :ok
       expect_call add_peer(_pid, _peer), times: :any
     end
-    Erix.Server.add_peer(server, follower)
+    Erix.Server.add_peer(server, Peer.for_mock(follower))
 
     # Convert to candidate
     Erix.Server.tick(server)
@@ -45,6 +48,7 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "Become leader if a majority of votes received" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 1)
       expect_call current_term(_pid), reply: 1, times: :any
@@ -53,18 +57,19 @@ defmodule Erix.RulesForCandidatesTest do
       expect_call log_from(_pid, 1), reply: [], times: 2
     end
     server = ServerMaker.new_primed_for_candidate(db)
+    server_peer = Erix.Server.__fortest__getpeer(server)
     {:ok, follower_one} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call request_append_entries(_pid, 1, _self, 0, 0, [], 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
-    Erix.Server.add_peer(server, follower_one)
-    Erix.Server.add_peer(server, follower_two)
+    Erix.Server.add_peer(server, Peer.for_mock(follower_one))
+    Erix.Server.add_peer(server, Peer.for_mock(follower_two))
 
     # Convert to candidate
     Erix.Server.tick(server)
@@ -84,6 +89,7 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "Stay candidate while no quorum" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 1)
       expect_call current_term(_pid), reply: 1, times: :any
@@ -91,26 +97,27 @@ defmodule Erix.RulesForCandidatesTest do
       expect_call log_at(_pid, 0), reply: nil, times: :any
     end
     server = ServerMaker.new_primed_for_candidate(db)
+    server_peer = Erix.Server.__fortest__getpeer(server)
     {:ok, follower_one} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_three} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_four} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
-    Erix.Server.add_peer(server, follower_one)
-    Erix.Server.add_peer(server, follower_two)
-    Erix.Server.add_peer(server, follower_three)
-    Erix.Server.add_peer(server, follower_four)
+    Erix.Server.add_peer(server, Peer.for_mock(follower_one))
+    Erix.Server.add_peer(server, Peer.for_mock(follower_two))
+    Erix.Server.add_peer(server, Peer.for_mock(follower_three))
+    Erix.Server.add_peer(server, Peer.for_mock(follower_four))
 
     # Convert to candidate
     Erix.Server.tick(server)
@@ -150,6 +157,7 @@ defmodule Erix.RulesForCandidatesTest do
 
   test "Ignore false votes" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 1)
       expect_call current_term(_pid), reply: 1, times: :any
@@ -157,16 +165,17 @@ defmodule Erix.RulesForCandidatesTest do
       expect_call log_at(_pid, 0), reply: nil, times: :any
     end
     server = ServerMaker.new_primed_for_candidate(db)
+    server_peer = Erix.Server.__fortest__getpeer(server)
     {:ok, follower_one} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
     {:ok, follower_two} = Mock.with_expectations do
-      expect_call request_vote(_pid, 1, {Erix.Server, server}, 0, 0)
+      expect_call request_vote(_pid, 1, server_peer, 0, 0)
       expect_call add_peer(_pid, _peer), times: :any
     end
-    Erix.Server.add_peer(server, follower_one)
-    Erix.Server.add_peer(server, follower_two)
+    Erix.Server.add_peer(server, Peer.for_mock(follower_one))
+    Erix.Server.add_peer(server, Peer.for_mock(follower_two))
 
     # Convert to candidate
     Erix.Server.tick(server)
@@ -183,10 +192,12 @@ defmodule Erix.RulesForCandidatesTest do
   end
 
   test "Candidate that receives AppendEntries becomes a follower" do
-    {:ok, peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 1, true)
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 1
       expect_call log_at(_pid, 0), reply: []
       expect_call append_entries_to_log(_pid, 1, [])
@@ -194,29 +205,31 @@ defmodule Erix.RulesForCandidatesTest do
     end
     server = ServerMaker.new_candidate(db)
 
-    Erix.Server.request_append_entries(server, 1, peer, 0, 0, [], 0)
+    Erix.Server.request_append_entries(server, 1, mock_peer, 0, 0, [], 0)
 
     state = Erix.Server.__fortest__getstate(server)
     assert state.state == :follower
 
     Mock.verify(db)
-    Mock.verify(peer)
+    Mock.verify(mock_node)
   end
 
   test "If an election timeout elapses, a new election is started" do
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 1
       expect_call set_current_term(_pid, 2)
       expect_call log_last_offset(_pid), reply: 0
       expect_call log_at(_pid, 0), reply: nil
     end
     server = ServerMaker.new_candidate(db)
+    server_peer = Erix.Server.__fortest__getpeer(server)
     {:ok, follower} = Mock.with_expectations do
       # Expect the second vote request
-      expect_call request_vote(_pid, 2, {Erix.Server, server}, 0, 0), reply: :ok
+      expect_call request_vote(_pid, 2, server_peer, 0, 0), reply: :ok
       expect_call add_peer(_pid, _peer), times: :any
     end
-    Erix.Server.add_peer(server, follower)
+    Erix.Server.add_peer(server, Peer.for_mock(follower))
 
     state = Erix.Server.__fortest__getstate(server)
     election_start = state.current_state_data.election_start

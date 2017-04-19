@@ -1,6 +1,7 @@
 defmodule Erix.RequestVoteRpcTest do
   use ExUnit.Case, async: true
   use Simpler.Mock
+  alias Erix.Server.Peer
 
   @moduledoc """
   Invoked by candidates to gather votes (§5.2).
@@ -31,7 +32,7 @@ defmodule Erix.RequestVoteRpcTest do
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
-    Erix.Server.Common.request_vote(20, mock_peer, 0, 0, state)
+    Erix.Server.Common.request_vote(20, Peer.for_mock(mock_peer), 0, 0, state)
 
     Mock.verify(mock_peer)
     Mock.verify(db)
@@ -51,16 +52,17 @@ defmodule Erix.RequestVoteRpcTest do
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
-    Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
+    Erix.Server.Common.request_vote(33, Peer.for_mock(mock_peer), 2, 4, state)
 
     Mock.verify(mock_peer)
     Mock.verify(db)
   end
 
   test "reply false if can vote, but candidate log is too short" do
-    {:ok, mock_peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call vote_reply(_pid, 33, false), reply: :ok
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 32
       expect_call set_current_term(_pid, 33) # Newer term seen, so we pick that one up
@@ -73,7 +75,7 @@ defmodule Erix.RequestVoteRpcTest do
 
     Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
 
-    Mock.verify(mock_peer)
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 
@@ -90,15 +92,16 @@ defmodule Erix.RequestVoteRpcTest do
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{state: :follower})
 
-    Erix.Server.Common.request_vote(33, mock_peer, 3, 31, state)
+    Erix.Server.Common.request_vote(33, Peer.for_mock(mock_peer), 3, 31, state)
 
     Mock.verify(mock_peer)
   end
 
   test "reply true if I'm a complete freshman - voting conditions will always hold" do
-    {:ok, mock_peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call vote_reply(_pid, 33, true), reply: :ok
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 33)
@@ -111,13 +114,14 @@ defmodule Erix.RequestVoteRpcTest do
 
     Erix.Server.Common.request_vote(33, mock_peer, 2, 4, state)
 
-    Mock.verify(mock_peer)
+    Mock.verify(mock_node)
   end
 
   test "reply true if voting conditions hold" do
-    {:ok, mock_peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call vote_reply(_pid, 33, true), reply: :ok
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
       expect_call current_term(_pid), reply: 33
       expect_call voted_for(_pid), reply: mock_peer
@@ -129,7 +133,7 @@ defmodule Erix.RequestVoteRpcTest do
 
     Erix.Server.Common.request_vote(33, mock_peer, 3, 32, state)
 
-    Mock.verify(mock_peer)
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 end

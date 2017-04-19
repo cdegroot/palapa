@@ -1,6 +1,7 @@
 defmodule Erix.AppendEntriesRpcTest do
   use ExUnit.Case, async: true
   use Simpler.Mock
+  alias Erix.Server.Peer
   require Logger
 
   @moduledoc """
@@ -38,71 +39,83 @@ defmodule Erix.AppendEntriesRpcTest do
     # We can test this just on the follower. Leaders should not receive
     # AppendEntry and candidates will flip into follower mode before handling
     # it.
-    {:ok, peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 42, false)
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 42
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
-    Erix.Server.Follower.request_append_entries(41, peer, 0, 0, [], 0, state)
 
-    Mock.verify(peer)
+    Erix.Server.Follower.request_append_entries(41, mock_peer, 0, 0, [], 0, state)
+
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 
   test "Reply false if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm" do
-    {:ok, peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 42, false)
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 42
       expect_call log_at(_pid, 2), reply: {41, "bar"}
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
-    #state = Erix.Server.Persistence.append_entries_to_log(0, [{41, "foo"}, {41, "bar"}], state)
-    Erix.Server.Follower.request_append_entries(42, peer, 2, 42, [], 0, state)
-    Mock.verify(peer)
+
+    Erix.Server.Follower.request_append_entries(42, mock_peer, 2, 42, [], 0, state)
+
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 
   test "Rewrite log when an existing entry conflicts with a new one" do
-    {:ok, peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 42, true)
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 42
       expect_call log_at(_pid, 2), reply: {42, "bar"}
       expect_call append_entries_to_log(_pid, 3, [{42, "mybaz"}, {42, "quux"}])
       expect_call log_last_offset(_pid), reply: 4
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{})
-    Erix.Server.Follower.request_append_entries(42, peer,
+    Erix.Server.Follower.request_append_entries(42, mock_peer,
       2,
       42,
       [{42, "mybaz"}, {42, "quux"}], # this log conflicts with {43, "baz"}
       2, state)
-    Mock.verify(peer)
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 
   test "update commit_index if leader_commit > commit_index" do
-    {:ok, peer} = Mock.with_expectations do
+    {:ok, mock_node} = Mock.with_expectations do
       expect_call append_entries_reply(_pid, _from, 42, true)
     end
+    mock_peer = Peer.for_mock(mock_node)
     {:ok, db} = Mock.with_expectations do
+      expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call current_term(_pid), reply: 42
       expect_call log_at(_pid, 3), reply: {42, "baz"}
       expect_call append_entries_to_log(_pid, 4, [{42, "mybaz"}, {42, "quux"}])
       expect_call log_last_offset(_pid), reply: 5
     end
     state = Erix.Server.PersistentState._set_persister(db, %Erix.Server.State{commit_index: 2})
-    state = Erix.Server.Follower.request_append_entries(42, peer,
+
+    state = Erix.Server.Follower.request_append_entries(42, mock_peer,
       3, 42, [{42, "mybaz"}, {42, "quux"}],
       20,
       state)
+
     assert state.commit_index == 5
-    Mock.verify(peer)
+    Mock.verify(mock_node)
     Mock.verify(db)
   end
 end

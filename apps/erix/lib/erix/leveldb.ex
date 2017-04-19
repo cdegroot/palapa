@@ -12,6 +12,7 @@ defmodule Erix.LevelDB do
   @current_term_key       <<-1 :: size(64)>>
   @voted_key              <<-2 :: size(64)>>
   @last_offset_key        <<-3 :: size(64)>>
+  @node_uuid_key          <<-4 :: size(64)>>
 
   @doc "Opens the database with the indicated filename"
   def open(name) do
@@ -56,6 +57,17 @@ defmodule Erix.LevelDB do
     end
   end
 
+  def node_uuid(db) do
+    case Exleveldb.get(db, @node_uuid_key) do
+      :not_found -> nil
+      {:ok, uuid_bytes} -> UUID.binary_to_string!(uuid_bytes)
+    end
+  end
+
+  def set_node_uuid(db, uuid) do
+    :ok = Exleveldb.put(db, @node_uuid_key, UUID.string_to_binary!(uuid))
+  end
+
   def append_entries_to_log(db, pos, entries) do
     count = length(entries)
     for {offset, entry} <- Enum.zip(0..(count - 1), entries) do
@@ -81,4 +93,5 @@ defmodule Erix.LevelDB do
   deft _current_term_key, do: @current_term_key
   deft _voted_key, do: @voted_key
   deft _last_offset_key, do: @last_offset_key
+  deft _node_uuid_key, do: @node_uuid_key
 end

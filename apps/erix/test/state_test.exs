@@ -41,6 +41,7 @@ defmodule Erix.StateTest do
       expect_call voted_for(_pid), reply: nil
       expect_call log_last_offset(_pid), reply: nil
       expect_call log_at(_pid, _offset), reply: nil, times: 5
+      expect_call node_uuid(_pid), reply: UUID.uuid4()
     end
 
     {:ok, server} = Erix.Server.start_link(db)
