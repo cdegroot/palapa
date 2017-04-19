@@ -28,8 +28,12 @@ defmodule Erix.Server.Leader do
 
   defp make_leader_state(state) do
     {_, last_index} = get_last_term_and_offset(state)
-    next_index = Map.new(state.peers, fn(p) -> {p, last_index + 1} end)
-    match_index = Map.new(state.peers, fn(p) -> {p, 0} end)
+    next_index = state
+    |> Peer.map(fn(p) -> {p, last_index + 1} end)
+    |> Map.new()
+    match_index = state
+    |> Peer.map(fn(p) -> {p, 0} end)
+    |> Map.new()
     leader_state = %State{next_index: next_index, match_index: match_index}
     %{state | state: :leader, current_state_data: leader_state}
   end
@@ -129,8 +133,7 @@ defmodule Erix.Server.Leader do
     leader_state = state.current_state_data
     last_index = log_last_offset(state)
     current_term = current_term(state)
-    new_last_pings = state.peers
-    |> Enum.map(fn(peer) ->
+    new_last_pings = Peer.map(state, fn(peer) ->
       # Make sure we only ever have one outstanding appendEntries.
       current_ping = Map.get(leader_state.last_ping, peer)
       if current_ping == nil do

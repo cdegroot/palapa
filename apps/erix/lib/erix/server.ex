@@ -14,7 +14,7 @@ defmodule Erix.Server do
   defmodule State do
     defstruct state: nil,
       persistent_state: nil,
-      peers: [],
+      peers: nil,
       commit_index: 0, last_applied: 0,
       current_time: -1,
       last_heartbeat_seen: -1,
@@ -82,6 +82,7 @@ defmodule Erix.Server do
 
   def init(persistence_ref) do
     initial_state = %State{state: :follower}
+    |> Peer.initial_state()
     state = PersistentState.initialize_persistence(persistence_ref, initial_state)
     if PersistentState.node_uuid(state) == nil do
       PersistentState.set_node_uuid(UUID.uuid1(), state)

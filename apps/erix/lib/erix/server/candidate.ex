@@ -28,7 +28,7 @@ defmodule Erix.Server.Candidate do
   @doc "Become a candidate"
   def transition_from(old, state, reason \\ "unknown") do
     Logger.info("#{inspect self()} transition from #{old} to candidate: #{reason}")
-    if length(state.peers) == 0 do
+    if Peer.peerless?(state) do
       # Short-circuit into leader if we don't have any peers
       mod = Erix.Server.state_module(:leader)
       mod.transition_from(:candidate, state, "no peers")
@@ -41,8 +41,7 @@ defmodule Erix.Server.Candidate do
       set_current_term(current_term, state)
       last_log_index = log_last_offset(state)
       {last_log_term, _} = log_at(last_log_index, state)
-      state.peers
-      |> Enum.map(fn(peer) ->
+      Peer.map(state, fn(peer) ->
         Peer.request_vote(peer, current_term, last_log_index,
           last_log_term, state)
       end)
@@ -50,7 +49,7 @@ defmodule Erix.Server.Candidate do
     end
   end
 
-  def request_vote(term, candidate_id, last_log_index, last_log_term, state) do
+  def request_vote(term, _candidate, _last_log_index, _last_log_term, state) do
     if term > current_term(state) do
       mod = Erix.Server.state_module(:follower)
       state = set_current_term(term, state)
@@ -69,7 +68,7 @@ defmodule Erix.Server.Candidate do
       if vote_granted do
         # We always vote for ourselves as a candidate, so add one to both.
         vote_count = state.current_state_data.vote_count + 1
-        peer_count = length(state.peers) + 1
+        peer_count = Peer.count(state) + 1
         if vote_count / peer_count > 0.5 do
           mod = Erix.Server.state_module(:leader)
           mod.transition_from(:candidate, state, "got quorum votes (#{inspect vote_count}/#{inspect peer_count})")

@@ -1,10 +1,49 @@
 defmodule Erix.Server.Peer do
   @moduledoc """
   Utilities around the internal representation of peers. They are
-  represented as {uuid, module, pid} triples.
+  represented as `{uuid, module, pid}` triples. This module also
+  contains methods to access the `:peers` part of the server state.
   """
 
   @type t :: {uuid :: binary, module :: atom, pid :: pid}
+
+  # Peers state access
+
+  def initial_state(state) do
+    %Erix.Server.State{state | peers: []}
+  end
+
+  def known_peer?(peer, state) do
+    state.peers
+    |> Enum.any?(fn(p) -> uuid_of(p) == uuid_of(peer) end)
+  end
+
+  def peerless?(state) do
+    count(state) == 0
+  end
+
+  def count(state) do
+    length(state.peers)
+  end
+
+  def add_peer(new_peer, state) do
+    np_mod = module_of(new_peer)
+    np_pid = pid_of(new_peer)
+    # Be nice, send our peers back for quick convergence.
+    state.peers
+    |> Enum.map(fn(peer) ->
+      np_mod.add_peer(np_pid, peer)
+    end)
+    np_mod.add_peer(np_pid, self_peer(state))
+    %{state | peers: [new_peer | state.peers]}
+  end
+
+  # Exception to the rule to keep state last...
+  def map(state, function) do
+    state.peers |> Enum.map(function)
+  end
+
+  # Peer triple management
 
   @doc "Make a completely new Peer, pointing to myself"
   def new do

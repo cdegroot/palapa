@@ -56,6 +56,7 @@ defmodule Erix.RulesForLeadersTest do
       expect_call log_from(_pid, 1), reply: nil, times: :any
     end
     state = Erix.Server.PersistentState.initialize_persistence(db, %Erix.Server.State{})
+    state = Erix.Server.Peer.initial_state(state)
     state = Erix.Server.Leader.transition_from(:candidate, state)
     state = Erix.Server.Leader.add_peer(Peer.for_mock(follower), state)
 
@@ -86,6 +87,7 @@ defmodule Erix.RulesForLeadersTest do
       expect_call append_entries_to_log(_pid, 1, [{0, {:some, "stuff"}}])
     end
     state = Erix.Server.PersistentState.initialize_persistence(db, %Erix.Server.State{})
+    state = Erix.Server.Peer.initial_state(state)
     state = Erix.Server.Leader.transition_from(:candidate, state)
     state = Erix.Server.Leader.add_peer(follower_peer, state)
 

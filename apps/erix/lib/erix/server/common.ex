@@ -14,21 +14,10 @@ defmodule Erix.Server.Common do
   @behaviour Erix.Server
 
   def add_peer(new_peer, state) do
-    known_peer = state.peers
-    |> Enum.any?(fn(p) -> Peer.uuid_of(p) == Peer.uuid_of(new_peer) end)
-    state = if known_peer do
-      # Ignore known peers.
+    if Peer.known_peer?(new_peer, state) do
       state
     else
-      np_mod = Peer.module_of(new_peer)
-      np_pid = Peer.pid_of(new_peer)
-      # New node. Be nice, send our peers back for quick convergence.
-      state.peers
-      |> Enum.map(fn(peer) ->
-        np_mod.add_peer(np_pid, peer)
-      end)
-      np_mod.add_peer(np_pid, Peer.self_peer(state))
-      %{state | peers: [new_peer | state.peers]}
+      Peer.add_peer(new_peer, state)
     end
   end
 
