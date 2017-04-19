@@ -25,8 +25,7 @@ defmodule Erix.Server.Follower do
     current_term = current_term(state)
     state = if term < current_term do
       # Bad term, send the current term back
-      Peer.module_of(leader).append_entries_reply(Peer.pid_of(leader),
-        Peer.self_peer(state), current_term, false)
+      Peer.append_entries_reply(leader, current_term, false, state)
       state
     else
       {reply, state} = case log_at(prev_log_index, state) do
@@ -39,8 +38,7 @@ defmodule Erix.Server.Follower do
           state = update_commit_index(leader_commit, state)
           {true, state}
       end
-      Peer.module_of(leader).append_entries_reply(Peer.pid_of(leader),
-        Peer.self_peer(state), current_term, reply)
+      Peer.append_entries_reply(leader, current_term, reply, state)
       # Term is same or newer. If it's newer, we're supposed to adopt it.
       if term > current_term do
         set_current_term(term, state)

@@ -76,8 +76,7 @@ defmodule Erix.Server.Common do
       voted_for = if will_vote, do: candidate, else: nil
       state = set_voted_for(voted_for, state)
       Logger.debug("#{inspect self()} vote for: #{inspect voted_for} as #{will_vote}")
-      Peer.module_of(candidate).vote_reply(Peer.pid_of(candidate),
-        current_term, will_vote)
+      Peer.vote_reply(candidate, current_term, will_vote)
       state
     end
   end

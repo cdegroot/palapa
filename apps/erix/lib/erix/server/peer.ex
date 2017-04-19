@@ -35,6 +35,28 @@ defmodule Erix.Server.Peer do
     new(Erix.Server.PersistentState.node_uuid(state), Erix.Server, self())
   end
 
+  # Forwarding calls refactored out of production code
+
+  def request_vote(peer, current_term, last_log_index, last_log_term, state) do
+    module_of(peer).request_vote(pid_of(peer), current_term,
+      self_peer(state), last_log_index, last_log_term)
+  end
+
+  def vote_reply(peer, current_term, will_vote) do
+    module_of(peer).vote_reply(pid_of(peer), current_term, will_vote)
+  end
+
+  def request_append_entries(peer, term, prev_log_index, prev_log_term,
+                             entries, leader_commit, state) do
+    module_of(peer).request_append_entries(pid_of(peer), term,
+      self_peer(state), prev_log_index, prev_log_term, entries, leader_commit)
+  end
+
+  def append_entries_reply(peer, term, reply, state) do
+    module_of(peer).append_entries_reply(pid_of(peer), self_peer(state), term, reply)
+  end
+
+
   import Simpler.TestSupport
 
   deft for_mock({mod, pid}), do: new(UUID.uuid4, mod, pid)

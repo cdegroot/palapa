@@ -143,13 +143,13 @@ defmodule Erix.Server.Leader do
         else
           0
         end
-        Peer.module_of(peer).request_append_entries(Peer.pid_of(peer),
-          current_term, Peer.self_peer(state),
+        Peer.request_append_entries(peer,
+          current_term,
           next_index - 1,
           prev_log_term,
           entries_to_send,
-          state.commit_index
-        )
+          state.commit_index,
+          state)
         {peer, last_index}
       else
         {peer, current_ping}
