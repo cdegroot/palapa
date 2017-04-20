@@ -34,6 +34,16 @@ defmodule Erix.Server.Follower do
 
   defdelegate add_peer(peer_id, state), to: Erix.Server.Common
 
+  def client_command(client_id, command_id, terms_to_log, state) do
+    leader = state.current_state_data.leader
+    if leader != nil do
+      {mod, pid} = {Peer.module_of(leader), Peer.pid_of(leader)}
+      mod.client_command(client_id, command_id, terms_to_log, state)
+    else
+      {:error, :leader_not_yet_known}
+    end
+  end
+
   def request_append_entries(term, leader, prev_log_index, prev_log_term, entries, leader_commit, state) do
     current_term = current_term(state)
     state = %{state | current_state_data: %{state.current_state_data | leader: leader}}

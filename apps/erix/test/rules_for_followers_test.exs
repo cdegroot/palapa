@@ -52,4 +52,23 @@ defmodule Erix.RulesForFollowersTest do
     follower_state = Erix.Server.__fortest__getstate(follower_node).current_state_data
     assert follower_state.leader == leader_peer
   end
+
+  test "A new follower can't forward client commands" do
+    follower_state = Erix.Server.Follower.transition_from(:start, %Erix.Server.State{})
+
+    {:error, :leader_not_yet_known} = Erix.Server.Follower.client_command(self(), 1234, {:foo, "bar"}, follower_state)
+  end
+
+  test "A follower forwards client commands to the leader" do
+    {:ok, leader_node} = Mock.with_expectations do
+      expect_call client_command(_pid, 1234, {:foo, "bar"}, _state)
+    end
+    leader_peer = Peer.for_mock(leader_node)
+    follower_state = Erix.Server.Follower.transition_from(:start, %Erix.Server.State{})
+    follower_state = %{follower_state | current_state_data: %{follower_state.current_state_data | leader: leader_peer}}
+
+    :ok = Erix.Server.Follower.client_command(self(), 1234, {:foo, "bar"}, follower_state)
+
+    Mock.verify(leader_node)
+  end
 end

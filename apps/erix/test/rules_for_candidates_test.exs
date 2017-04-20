@@ -245,4 +245,10 @@ defmodule Erix.RulesForCandidatesTest do
     Mock.verify(follower)
     Mock.verify(db)
   end
+
+  test "A candidate can't forward client commands" do
+    candidate_state = %Erix.Server.State{}
+
+    {:error, :leader_not_yet_known} = Erix.Server.Candidate.client_command(self(), 1234, {:foo, "bar"}, candidate_state)
+  end
 end

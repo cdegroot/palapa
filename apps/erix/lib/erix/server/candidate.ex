@@ -25,6 +25,11 @@ defmodule Erix.Server.Candidate do
 
   defdelegate add_peer(peer_id, state), to: Erix.Server.Common
 
+  def client_command(client_id, command_id, terms_to_log, state) do
+    {:error, :leader_not_yet_known}
+  end
+
+
   @doc "Become a candidate"
   def transition_from(old, state, reason \\ "unknown") do
     Logger.info("#{inspect self()} transition from #{old} to candidate: #{reason}")
