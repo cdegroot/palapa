@@ -26,6 +26,11 @@ defmodule Erix.Server.Leader do
     ping_peers(state)
   end
 
+  defp transition_to(state_atom, state, reason) do
+    mod = Erix.Server.state_module(state_atom)
+    mod.transition_from(:leader, state, reason)
+  end
+
   defp make_leader_state(state) do
     {_, last_index} = get_last_term_and_offset(state)
     next_index = state
@@ -76,10 +81,9 @@ defmodule Erix.Server.Leader do
   """
   def request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state) do
     if term > current_term(state) do
-      mod = Erix.Server.state_module(:follower)
-      state = mod.transition_from(state.state, state, "newer term in request_append_entries")
+      state = transition_to(:follower, state, "newer term in request_append_entries")
       # Let the follower state handle the actual call
-      mod.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
+      Erix.Server.Follower.request_append_entries(term, leader_id, prev_log_index, prev_log_term, entries, leader_commit, state)
     else
       state
     end
@@ -91,9 +95,8 @@ defmodule Erix.Server.Leader do
   end
   defp do_append_entries_reply(_from, term, _repl, current_term, state)
   when term > current_term do
-    mod = Erix.Server.state_module(:follower)
     state = set_current_term(term, state)
-    mod.transition_from(state.state, state, "newer term in append_entries_reply")
+    transition_to(:follower, state, "newer term in append_entries_reply")
   end
   defp do_append_entries_reply(from, _term, false, _current_term, state) do
     leader_state = state.current_state_data

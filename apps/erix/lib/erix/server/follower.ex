@@ -12,11 +12,20 @@ defmodule Erix.Server.Follower do
   def tick(state) do
     if state.current_time - state.last_heartbeat_seen > @heartbeat_timeout_ticks do
       Logger.debug("#{inspect self()} heartbeat timeout #{state.current_time} last #{state.last_heartbeat_seen}")
-      target = Erix.Server.state_module(:candidate)
-      target.transition_from(:follower, state, "heartbeat timeout")
+      transition_to(:candidate, state, "heartbeat timeout")
     else
       state
     end
+  end
+
+  def transition_from(old, state, reason \\ "unknown") do
+    Logger.info("#{inspect self()} transition from #{old} to follower: #{reason}")
+    %{state | state: :follower, current_state_data: nil, last_heartbeat_seen: state.current_time}
+  end
+
+  defp transition_to(state_atom, state, reason) do
+    mod = Erix.Server.state_module(state_atom)
+    mod.transition_from(:follower, state, reason)
   end
 
   defdelegate add_peer(peer_id, state), to: Erix.Server.Common
@@ -51,11 +60,6 @@ defmodule Erix.Server.Follower do
 
   defdelegate append_entries_reply(from, term, reply, state), to: Erix.Server.Common
 
-  def transition_from(old, state, reason \\ "unknown") do
-    Logger.info("#{inspect self()} transition from #{old} to follower: #{reason}")
-    %{state | state: :follower, current_state_data: nil, last_heartbeat_seen: state.current_time}
-  end
-
   defdelegate request_vote(term, candidate_id, last_log_index, last_log_term, state), to: Erix.Server.Common
 
   defdelegate vote_reply(term, vote_granted, state), to: Erix.Server.Common
@@ -64,4 +68,5 @@ defmodule Erix.Server.Follower do
     new_commit_index = min(leader_commit, log_last_offset(state))
     %{state | commit_index: new_commit_index}
   end
+
 end

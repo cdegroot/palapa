@@ -12,7 +12,8 @@ defmodule Erix.Node do
   passed to that module's `open` method. If there is an empty database, a new
   unique id will be created for the node. It will also register the server under the
   indicated node name so that remote nodes can access us through the `{name, node}`.
-  destination.
+  destination. Note that nodes have UUIDs to identify themselves inside the protocol,
+  so node names don't need to be unique on the network.
   """
   def start_link(db_module, db_name, node_name \\ :erix, tick_time_ms \\ @default_tick_time_ms) do
     children = [

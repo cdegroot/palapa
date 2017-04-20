@@ -21,6 +21,11 @@ defmodule Erix.Server.Common do
     end
   end
 
+  defp transition_to(state_atom, state, reason) do
+    mod = Erix.Server.state_module(state_atom)
+    mod.transition_from(state.state, state, reason)
+  end
+
   def tick(_state) do
     raise "This function should not be called!"
   end
@@ -30,11 +35,10 @@ defmodule Erix.Server.Common do
     if term > current_term do
       # We've seen a newer term - immediately transition to follower, no matter what
       # we were doing before.
-      module = Erix.Server.state_module(:follower)
       state = set_current_term(term, state)
-      state = module.transition_from(state.state, state, "newer term in request_vote")
+      state = transition_to(:follower, state, "newer term in request_vote")
       # And then we can most likely positively reply
-      request_vote(term, candidate, last_log_index, last_log_term, state)
+      Erix.Server.Follower.request_vote(term, candidate, last_log_index, last_log_term, state)
     else
       # TODO refactor this nested if/else hairball
       will_vote = if term < current_term do
@@ -85,8 +89,7 @@ defmodule Erix.Server.Common do
   def upgrade_term_if_newer_seen(term, state) do
     if term > current_term(state) do
       state = set_current_term(term, state)
-      module = Erix.Server.state_module(:follower)
-      module.transition_from(state.state, state, "newer term seen in common")
+      transition_to(:follower, state, "newer term seen in common")
     else
       state
     end
