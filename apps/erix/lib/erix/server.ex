@@ -81,7 +81,7 @@ defmodule Erix.Server do
   # Server implementation
 
   def init(persistence_ref) do
-    initial_state = %State{state: :follower}
+    initial_state = Erix.Server.Follower.transition_from(:startup, %State{}, "Startup")
     |> Peer.initial_state()
     state = PersistentState.initialize_persistence(persistence_ref, initial_state)
     if PersistentState.node_uuid(state) == nil do

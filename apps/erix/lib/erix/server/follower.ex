@@ -7,6 +7,10 @@ defmodule Erix.Server.Follower do
   import Erix.Server.PersistentState
   alias Erix.Server.Peer
 
+  defmodule State do
+    defstruct leader: nil
+  end
+
   @behaviour Erix.Server
 
   def tick(state) do
@@ -20,7 +24,7 @@ defmodule Erix.Server.Follower do
 
   def transition_from(old, state, reason \\ "unknown") do
     Logger.info("#{inspect self()} transition from #{old} to follower: #{reason}")
-    %{state | state: :follower, current_state_data: nil, last_heartbeat_seen: state.current_time}
+    %{state | state: :follower, current_state_data: %State{}, last_heartbeat_seen: state.current_time}
   end
 
   defp transition_to(state_atom, state, reason) do
@@ -32,6 +36,7 @@ defmodule Erix.Server.Follower do
 
   def request_append_entries(term, leader, prev_log_index, prev_log_term, entries, leader_commit, state) do
     current_term = current_term(state)
+    state = %{state | current_state_data: %{state.current_state_data | leader: leader}}
     state = if term < current_term do
       # Bad term, send the current term back
       Peer.append_entries_reply(leader, current_term, false, state)
