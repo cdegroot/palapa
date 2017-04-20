@@ -10,37 +10,39 @@ defmodule Erix.Server.Peer do
   # Peers state access
 
   def initial_state(state) do
-    %Erix.Server.State{state | peers: []}
+    %Erix.Server.State{state | peers: %{}}
   end
 
   def known_peer?(peer, state) do
-    state.peers
-    |> Enum.any?(fn(p) -> uuid_of(p) == uuid_of(peer) end)
+    Map.has_key?(state.peers, uuid_of(peer))
   end
 
   def peerless?(state) do
-    count(state) == 0
+    Kernel.map_size(state.peers) == 0
   end
 
   def count(state) do
-    length(state.peers)
+    Kernel.map_size(state.peers)
   end
 
   def add_peer(new_peer, state) do
     np_mod = module_of(new_peer)
     np_pid = pid_of(new_peer)
+    np_id = uuid_of(new_peer)
     # Be nice, send our peers back for quick convergence.
     state.peers
-    |> Enum.map(fn(peer) ->
+    |> Enum.map(fn({_id, peer}) ->
       np_mod.add_peer(np_pid, peer)
     end)
+    # And ourselves, of course.
     np_mod.add_peer(np_pid, self_peer(state))
-    %{state | peers: [new_peer | state.peers]}
+
+    %{state | peers: Map.put(state.peers, np_id, new_peer)}
   end
 
   # Exception to the rule to keep state last...
   def map(state, function) do
-    state.peers |> Enum.map(function)
+    state.peers |> Enum.map(fn({_id, peer}) -> function.(peer) end)
   end
 
   # Peer triple management
