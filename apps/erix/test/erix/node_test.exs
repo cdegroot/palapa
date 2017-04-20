@@ -1,13 +1,10 @@
-defmodule Erix.NodeTest do
+#
+# These are slow integration tests. To run them in parallel, we
+# split them up in modules (ExUnit "Case"), which is the unit of
+# parallelization in ExUnit
+defmodule Erix.NodeTest.Common do
   use ExUnit.Case, async: true
-  require Logger
-
-  @moduletag :integration
-
-  setup do
-    do_setup()
-  end
-  defp do_setup do
+  def do_setup do
     random = :rand.uniform(1_000_000_000)
     db_name = "/tmp/nodetest.#{random}"
     node_name = :"node.#{random}"
@@ -16,6 +13,16 @@ defmodule Erix.NodeTest do
     end
     [db_name: db_name, node_name: node_name]
   end
+end
+
+defmodule Erix.NodeTest.One do
+  use ExUnit.Case, async: true
+  require Logger
+  @moduletag :integration
+  setup do
+    Erix.NodeTest.Common.do_setup()
+  end
+
   test "Basic configuration sets up the structure we expect", context do
     {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name])
 
@@ -26,6 +33,15 @@ defmodule Erix.NodeTest do
     state = Erix.Server.__fortest__getstate(context[:node_name])
     assert state.state == :follower
     assert state.current_time > -1
+  end
+end
+
+defmodule Erix.NodeTest.Two do
+  use ExUnit.Case, async: true
+  require Logger
+  @moduletag :integration
+  setup do
+    Erix.NodeTest.Common.do_setup()
   end
 
   test "Sole new node transitions to leader", context do
@@ -39,9 +55,15 @@ defmodule Erix.NodeTest do
     assert state.state == :leader
     assert state.current_time > 10
   end
+end
+
+defmodule Erix.NodeTest.Three do
+  use ExUnit.Case, async: true
+  require Logger
+  @moduletag :integration
 
   test "Three nodes elect a leader" do
-    contexts = for _ <- 1..3, do: do_setup()
+    contexts = for _ <- 1..3, do: Erix.NodeTest.Common.do_setup()
     pids = contexts |> Enum.map(fn(context) ->
       {:ok, pid} = Erix.Node.start_link(Erix.LevelDB, context[:db_name], context[:node_name], 20)
       pid

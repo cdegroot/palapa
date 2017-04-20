@@ -40,6 +40,30 @@ defmodule Amnesix.KeyWorkerTest do
     assert_received {:persist, __MODULE__, %{^id => {^time, ^mfa}}}
   end
 
+  # Test helper stuff
+
+  def work_item_in(secs_in_future) do
+    {"my-unique-id",
+     System.os_time(:second) + secs_in_future,
+     {Kernel, :send, [self(), :done_work]}}
+  end
+
+  def initialized_worker do
+    {:ok, pid} = MockPersister.start_link()
+    persister = {MockPersister, pid}
+    {:ok, worker} = KeyWorker.start_link(persister, __MODULE__)
+    KeyWorker.initialization_done(worker)
+    {worker, persister}
+  end
+end
+
+defmodule Amnesix.KeyWorkerTestTwo do
+  # Parallelize slow tests by splitting them into different modules
+
+  use ExUnit.Case, async: true
+  alias Amnesix.KeyWorker
+  import Amnesix.KeyWorkerTest
+
   test "it will reload state and run jobs from reloaded state" do
     {:ok, worker} = KeyWorker.start_link({nil, nil}, nil)
     {key, at, mfa} = work_item_in(1)
@@ -50,19 +74,4 @@ defmodule Amnesix.KeyWorkerTest do
     assert_receive :done_work, 2_000
   end
 
-  # Test helper stuff
-
-  def work_item_in(secs_in_future) do
-    {"my-unique-id",
-     System.os_time(:second) + secs_in_future,
-     {Kernel, :send, [self(), :done_work]}}
-  end
-
-  defp initialized_worker do
-    {:ok, pid} = MockPersister.start_link()
-    persister = {MockPersister, pid}
-    {:ok, worker} = KeyWorker.start_link(persister, __MODULE__)
-    KeyWorker.initialization_done(worker)
-    {worker, persister}
-  end
 end

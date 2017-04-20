@@ -92,6 +92,10 @@ defmodule Simpler.Mock do
       forwarders = [putattr | unquote(forwarders)]
       random_module_name = Integer.to_string(:rand.uniform(100000000000))
       mock_module = Module.concat([unquote(caller_mod), unquote(caller_fun), random_module_name])
+      # TODO this is quite slow (~10ms). I'm not sure we can do anything about it.
+      # Before this was in the compile side of the macro, but that precluded using
+      # mock creation in reusable code, as every mock would get the same module (and
+      # we play dirty by hiding the pid in a module attribute).
       Module.create(mock_module, forwarders, Macro.Env.location(__ENV__))
       unquote_splicing(expectations)
       {:ok, {mock_module, pid}}

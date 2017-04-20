@@ -45,7 +45,6 @@ defmodule ServerMaker do
     Erix.Server.tick(server)
     ensure_is(server, :candidate)
     Erix.Server.__fortest__setpersister(server, persistence)
-    Mock.verify(db)
     server
   end
   def new_leader(persistence) do
@@ -65,7 +64,6 @@ defmodule ServerMaker do
     Erix.Server.vote_reply(server, 0, true)
     ensure_is(server, :leader)
     Erix.Server.__fortest__setpersister(server, persistence)
-    Mock.verify(db)
     server
   end
   def ensure_is(server_pid, kind) do
