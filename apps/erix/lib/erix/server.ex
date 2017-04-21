@@ -22,7 +22,8 @@ defmodule Erix.Server do
   end
 
   def start_link(persistence_ref, node_name) do
-    GenServer.start_link(__MODULE__, persistence_ref, name: node_name) #, [debug: [:statistics, :trace]])
+    GenServer.start_link(__MODULE__, persistence_ref, name: node_name)
+    #GenServer.start_link(__MODULE__, persistence_ref, [name: node_name, debug: [:statistics, :trace]])
   end
 
   @doc "Given a state tag, return the module implementing it"
@@ -38,6 +39,11 @@ defmodule Erix.Server do
   @doc "Add a peer server"
   def add_peer(pid, peer_pid) do
     GenServer.cast(pid, {:add_peer, peer_pid})
+  end
+
+  @doc "Process the client command"
+  def client_command(pid, client_ref, command_id, command) do
+    GenServer.call(pid, {:client_command, client_ref, command_id, command})
   end
 
   # TODO rename request vote to request request vote or something? At least some
@@ -99,6 +105,16 @@ defmodule Erix.Server do
   end
   deft handle_call({:__fortest__setpersister, persister}, _from, state) do
     {:reply, :ok, Erix.Server.PersistentState._set_persister(persister, state)}
+  end
+
+  def handle_call({:client_command, client_ref, command_id, command}, _from, state) do
+    mod = state_module(state.state)
+    case mod.client_command(client_ref, command_id, command, state) do
+      error = {:error, reason} ->
+        {:reply, error, state}
+      new_state ->
+        {:reply, :ok, new_state}
+    end
   end
 
   # Most of the calls here are state-specific; they forward to the

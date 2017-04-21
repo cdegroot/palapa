@@ -47,6 +47,17 @@ defmodule Erix.Server.Leader do
   end
 
   def tick(state) do
+    # Check whether we can send any replies to clients. This may be the case
+    # if we're the only leader, for example.
+    # TODO this duplicates code with the append entries reply handling. We
+    # probably don't need it there. Having it here smells more robust (as it
+    # will make the leader behave the same whether there's a single node or more)
+    # In any case, fix the code duplication :)
+    leader_state = state.current_state_data
+    commit_index = calculate_commit_index(leader_state.match_index, log_last_offset(state), state.commit_index)
+    client_replies = reply_to_clients(leader_state.client_replies, commit_index)
+    leader_state = %{leader_state | client_replies: client_replies}
+    state = %{state | current_state_data: leader_state, commit_index: commit_index}
     # For now, send an empty append_entries on every tick. TODO optimize this
     ping_peers(state)
   end
