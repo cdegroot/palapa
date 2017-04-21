@@ -56,6 +56,14 @@ defmodule Erix.Server.Leader do
     leader_state = state.current_state_data
     commit_index = calculate_commit_index(leader_state.match_index, log_last_offset(state), state.commit_index)
     client_replies = reply_to_clients(leader_state.client_replies, commit_index)
+    # And now we're in sort of terrible hack mode.. TODO clean this mess up whenA
+    # tests are fixed again. But if we got stuff forwarded, then our local client
+    # needs to be informed. So we inform the caller (so it can inform _its_ caller)
+    # and always the locally associated client, leader or follower. Here goes
+    # nothing...
+    Erix.Server.Follower.signal_client(state.commit_index, commit_index, state)
+
+    # End of dirty code. Do bookkeeping of outstanding client replies and return.
     leader_state = %{leader_state | client_replies: client_replies}
     state = %{state | current_state_data: leader_state, commit_index: commit_index}
     # For now, send an empty append_entries on every tick. TODO optimize this
@@ -127,6 +135,8 @@ defmodule Erix.Server.Leader do
       commit_index = calculate_commit_index(match_index, log_last_offset(state), state.commit_index)
       # If this moves the committed_index past outstanding client replies, send replies.
       client_replies = reply_to_clients(leader_state.client_replies, commit_index)
+      # And send our regards to our local friend as well, if needed.
+      Erix.Server.Follower.signal_client(state.commit_index, commit_index, state)
       # Save state
       leader_state = %{leader_state | last_ping: Map.delete(leader_state.last_ping, from),
                        match_index: match_index,

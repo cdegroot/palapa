@@ -61,7 +61,7 @@ defmodule Erix.RulesForFollowersTest do
 
   test "A follower forwards client commands to the leader" do
     {:ok, leader_node} = Mock.with_expectations do
-      expect_call client_command(_pid, 1234, {:foo, "bar"}, _state)
+      expect_call client_command(_pid, _client_ref, 1234, {:foo, "bar"})
     end
     leader_peer = Peer.for_mock(leader_node)
     follower_state = Erix.Server.Follower.transition_from(:start, %Erix.Server.State{})

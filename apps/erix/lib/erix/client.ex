@@ -12,10 +12,25 @@ defmodule Erix.Client do
   of the protocol.
   """
   use GenServer
+  require Logger
 
   defmodule State do
     defstruct node_name: nil, data: %{}, counter: 0, to_complete: %{}
   end
+
+  def start_link(node_name) do
+    GenServer.start_link(__MODULE__, node_name,
+      [name: Erix.Node.client_name(node_name)]) #,  debug: [:statistics, :trace]])
+  end
+
+  @doc "Return the number of data items"
+  def count(pid), do: GenServer.call(pid, :count)
+
+  @doc "Write data"
+  def put(pid, key, value), do: GenServer.call(pid, {:put, key, value})
+
+  @doc "Read data"
+  def get(pid, key), do: GenServer.call(pid, {:get, key})
 
   @doc """
   Indicates that a client command succesfully completed. Callback from the node
@@ -25,15 +40,12 @@ defmodule Erix.Client do
     GenServer.cast(pid, {:command_completed, command_id})
   end
 
-  def start_link(node_name) do
-    GenServer.start_link(__MODULE__, node_name, name: Erix.Node.client_name(node_name))
+  @doc """
+  Indicates that the local node has committed state the client should apply.
+  """
+  def apply_state(pid, delta) do
+    GenServer.cast(pid, {:apply_state, delta})
   end
-
-  @doc "Return the number of data items"
-  def count(pid), do: GenServer.call(pid, :count)
-
-  @doc "Write data"
-  def put(pid, key, value), do: GenServer.call(pid, {:put, key, value})
 
   # Server implementation
 
@@ -57,11 +69,22 @@ defmodule Erix.Client do
     end
   end
 
+  def handle_call({:get, key}, _from, state) do
+    {:reply, Map.get(state.data, key), state}
+  end
+
   def handle_cast({:command_completed, command_id}, state) do
-    # Command has been committed, so we can apply it to our data
+    # Command has been committed, so we can apply it to our data and reply
+    # to our client.
     {{from, key, value}, to_complete} = Map.pop(state.to_complete, command_id)
+    # TODO - nil value as a delete operation?
     data = Map.put(state.data, key, value)
     GenServer.reply(from, :ok)
     {:noreply, %State{state | data: data, to_complete: to_complete}}
+  end
+
+  def handle_cast({:apply_state, {key, value}}, state) do
+    data = Map.put(state.data, key, value)
+    {:noreply, %State{state | data: data}}
   end
 end

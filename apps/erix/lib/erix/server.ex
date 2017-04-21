@@ -12,7 +12,8 @@ defmodule Erix.Server do
   @type log_entry :: {term :: integer, entry :: any}
 
   defmodule State do
-    defstruct state: nil,
+    defstruct node_name: nil,
+      state: nil,
       persistent_state: nil,
       peers: nil,
       commit_index: 0, last_applied: 0,
@@ -22,8 +23,9 @@ defmodule Erix.Server do
   end
 
   def start_link(persistence_ref, node_name) do
-    GenServer.start_link(__MODULE__, persistence_ref, name: node_name)
-    #GenServer.start_link(__MODULE__, persistence_ref, [name: node_name, debug: [:statistics, :trace]])
+    GenServer.start_link(__MODULE__, {persistence_ref, node_name}, name: node_name)
+    #GenServer.start_link(__MODULE__, {persistence_ref, node_name},
+    #  [name: node_name, debug: [:statistics, :trace]])
   end
 
   @doc "Given a state tag, return the module implementing it"
@@ -86,8 +88,9 @@ defmodule Erix.Server do
 
   # Server implementation
 
-  def init(persistence_ref) do
-    initial_state = Erix.Server.Follower.transition_from(:startup, %State{}, "Startup")
+  def init({persistence_ref, node_name}) do
+    initial_state = Erix.Server.Follower.transition_from(:startup,
+      %State{node_name: node_name}, "Startup")
     |> Peer.initial_state()
     state = PersistentState.initialize_persistence(persistence_ref, initial_state)
     if PersistentState.node_uuid(state) == nil do
@@ -110,9 +113,13 @@ defmodule Erix.Server do
   def handle_call({:client_command, client_ref, command_id, command}, _from, state) do
     mod = state_module(state.state)
     case mod.client_command(client_ref, command_id, command, state) do
-      error = {:error, reason} ->
+      error = {:error, _reason} ->
         {:reply, error, state}
+      :ok ->
+        # It got forwarded to another process
+        {:reply, :ok, state}
       new_state ->
+        # It got handled in this process
         {:reply, :ok, new_state}
     end
   end
