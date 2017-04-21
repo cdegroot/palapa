@@ -21,8 +21,8 @@ defmodule Erix.Server do
       current_state_data: nil
   end
 
-  def start_link(persistence_ref) do
-    GenServer.start_link(__MODULE__, persistence_ref) #, [debug: [:statistics, :trace]])
+  def start_link(persistence_ref, node_name) do
+    GenServer.start_link(__MODULE__, persistence_ref, name: node_name) #, [debug: [:statistics, :trace]])
   end
 
   @doc "Given a state tag, return the module implementing it"

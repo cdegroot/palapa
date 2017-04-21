@@ -29,7 +29,6 @@ defmodule Erix.Server.Candidate do
     {:error, :leader_not_yet_known}
   end
 
-
   @doc "Become a candidate"
   def transition_from(old, state, reason \\ "unknown") do
     Logger.info("#{inspect self()} transition from #{old} to candidate: #{reason}")

@@ -18,7 +18,8 @@ defmodule Erix.Node do
   def start_link(db_module, db_name, node_name \\ :erix, tick_time_ms \\ @default_tick_time_ms) do
     children = [
       Erix.Node.ServerWorker.worker_spec(db_module, db_name, node_name),
-      Erix.Node.TimerWorker.worker_spec(tick_time_ms, node_name)
+      Erix.Node.TimerWorker.worker_spec(tick_time_ms, node_name),
+      Erix.Node.ClientWorker.worker_spec(node_name)
     ]
     Supervisor.start_link(children, strategy: :one_for_one)
   end
@@ -46,14 +47,31 @@ defmodule Erix.Node do
     """
     def start_link(db_module, db_name, node_name) do
       {:ok, db} = db_module.open(db_name)
-      {:ok, pid} = Erix.Server.start_link({db_module, db})
-      Process.register(pid, node_name)
-      {:ok, pid}
+      Erix.Server.start_link({db_module, db}, node_name)
     end
 
     def worker_spec(db_module, db_name, node_name) do
       import Supervisor.Spec
       worker(__MODULE__, [db_module, db_name, node_name])
     end
+  end
+
+  defmodule ClientWorker do
+    @moduledoc """
+    A wrapper and spec for `Erix.Client`
+    """
+    def start_link(node_name) do
+      Erix.Client.start_link(node_name)
+    end
+
+    def worker_spec(node_name) do
+      import Supervisor.Spec
+      worker(__MODULE__, [node_name])
+    end
+  end
+
+  @doc "Given the node name, construct the client's process name"
+  def client_name(node_name) do
+    String.to_atom(Atom.to_string(node_name) <> "_client")
   end
 end

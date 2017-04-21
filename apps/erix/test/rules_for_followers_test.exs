@@ -21,7 +21,7 @@ defmodule Erix.RulesForFollowersTest do
       expect_call log_at(_pid, 0), reply: nil
       expect_call log_from(_pid, 1), reply: []
     end
-    {:ok, server} = Erix.Server.start_link(db)
+    {:ok, server} = Erix.Server.start_link(db, ServerMaker.random_node_name)
 
     assert Erix.Server.__fortest__getstate(server).state == :follower
 

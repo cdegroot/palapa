@@ -43,8 +43,7 @@ defmodule Erix.StateTest do
       expect_call log_at(_pid, _offset), reply: nil, times: 5
       expect_call node_uuid(_pid), reply: UUID.uuid4()
     end
-
-    {:ok, server} = Erix.Server.start_link(db)
+    {:ok, server} = Erix.Server.start_link(db, ServerMaker.random_node_name)
 
     state = Erix.Server.__fortest__getstate(server)
     # Verify initial stable state - this must come from persistence

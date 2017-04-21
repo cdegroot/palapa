@@ -4,6 +4,8 @@ defmodule ServerMaker do
   @fixed_uuid UUID.uuid4()
   def fixed_uuid, do: @fixed_uuid
 
+  def random_node_name, do: String.to_atom("erixtest_#{:rand.uniform(100_000_000)}")
+
   use Erix.Constants
   use Simpler.Mock
   alias Erix.Server.Peer
@@ -11,7 +13,7 @@ defmodule ServerMaker do
     {:ok, db} = Mock.with_expectations do
       expect_call node_uuid(_pid), reply: @fixed_uuid, times: :any
     end
-    {:ok, server} = Erix.Server.start_link(db)
+    {:ok, server} = Erix.Server.start_link(db, random_node_name())
     Erix.Server.__fortest__setpersister(server, persistence)
     server
   end
