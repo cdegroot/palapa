@@ -25,7 +25,7 @@ defmodule Erix.Server.Candidate do
 
   defdelegate add_peer(peer_id, state), to: Erix.Server.Common
 
-  def client_command(client_id, command_id, terms_to_log, state) do
+  def client_command(_client_id, _command_id, _terms_to_log, _state) do
     {:error, :leader_not_yet_known}
   end
 

@@ -105,13 +105,12 @@ defmodule Erix.Server.Leader do
     last_ping = Map.delete(leader_state.last_ping, from)
     next_index = Map.update!(leader_state.next_index, from, fn(cur) -> cur - 1 end)
     %{state | current_state_data: %{leader_state | last_ping: last_ping, next_index: next_index}}
-    # TODO maybe ping right away? For now, we ping again.
   end
   defp do_append_entries_reply(from, _term, true, _current_term, state) do
     leader_state = state.current_state_data
     outstanding_index = Map.get(leader_state.last_ping, from)
     if outstanding_index != nil do
-      # Update match_index, next_index
+      # Update match_index, next_index from the reply
       match_index = Map.put(leader_state.match_index, from, outstanding_index)
       next_index = Map.put(leader_state.next_index, from, outstanding_index + 1)
       leader_state = %{leader_state |

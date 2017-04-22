@@ -10,6 +10,8 @@ if Mix.env == :dev do
 
 config :mix_test_watch,
   clear: true,
+  exclude: [
+    ~r/\.#/],
   tasks: ["test"]
 
 end

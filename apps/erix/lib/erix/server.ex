@@ -48,9 +48,6 @@ defmodule Erix.Server do
     GenServer.call(pid, {:client_command, client_ref, command_id, command})
   end
 
-  # TODO rename request vote to request request vote or something? At least some
-  # naming consistency for all of these.
-
   @doc "Receive a RequestVote RPC"
   def request_vote(pid, term, candidate_id, last_log_index, last_log_term) do
     GenServer.cast(pid, {:request_vote, term, candidate_id, last_log_index, last_log_term})

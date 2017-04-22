@@ -42,32 +42,20 @@ defmodule Erix.Server.Common do
       # And then we can most likely positively reply
       Erix.Server.Follower.request_vote(term, candidate, last_log_index, last_log_term, state)
     else
-      # TODO refactor this nested if/else hairball
-      will_vote = if term < current_term do
-        false
-      else
+      # There's a whole list of conditions we need to check..
+      # - we agree on the term
+      will_vote = term >= current_term
+      # - we haven't voted for anyone else
+      will_vote = will_vote and (
         voted_for = voted_for(state)
-        if voted_for == nil or voted_for == candidate do
+        voted_for == nil or voted_for == candidate)
+      # - we don't have conflicting logs.
+      will_vote = will_vote and (
           my_last_log_index = log_last_offset(state)
-          if my_last_log_index > last_log_index do
-            false
-          else
-            if my_last_log_index == 0 do
-              true
-            else
+          my_last_log_index == 0 or (my_last_log_index <= last_log_index and (
               {my_last_log_term, _} = log_at(my_last_log_index, state)
               # we already established that candidate's log is equal or longer.
-              if my_last_log_term > last_log_term do
-                false
-              else
-                true
-              end
-            end
-          end
-        else
-          false
-        end
-      end
+              my_last_log_term <= last_log_term)))
       voted_for = if will_vote, do: candidate, else: nil
       state = set_voted_for(voted_for, state)
       Logger.debug("#{inspect self()} vote for: #{inspect voted_for} as #{will_vote}")
