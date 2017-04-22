@@ -33,7 +33,7 @@ defmodule Erix.Server.Candidate do
   def transition_from(old, state, reason \\ "unknown") do
     Logger.info("#{inspect self()} transition from #{old} to candidate: #{reason}")
     if Peer.peerless?(state) do
-      # Short-circuit into leader if we don't have any peers
+      # Short-circuit into leader if we don't have any peers.
       transition_to(:leader, state, "no peers")
     else
       # Nope, we need real elections

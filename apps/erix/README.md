@@ -23,7 +23,7 @@ now, it's all hardcoded values in ``constants.ex``).
 * [x] TODO: Implement all of the specs as basic tests
 * [x] TODO: Add persistence of the required values
 * [x] TODO: Implement LevelDB persistence engine
-* [ ] TODO: Client/state machine interaction
+* [x] TODO: Client/state machine interaction
 * [ ] TODO: Implement section 6, Cluster Membership Changes
 * [ ] TODO: Implement section 7, Log Compaction
 * [ ] TODO: Crazy integration testing
