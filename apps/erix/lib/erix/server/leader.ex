@@ -47,25 +47,8 @@ defmodule Erix.Server.Leader do
   end
 
   def tick(state) do
-    # Check whether we can send any replies to clients. This may be the case
-    # if we're the only leader, for example.
-    # TODO this duplicates code with the append entries reply handling. We
-    # probably don't need it there. Having it here smells more robust (as it
-    # will make the leader behave the same whether there's a single node or more)
-    # In any case, fix the code duplication :)
-    leader_state = state.current_state_data
-    commit_index = calculate_commit_index(leader_state.match_index, log_last_offset(state), state.commit_index)
-    client_replies = reply_to_clients(leader_state.client_replies, commit_index)
-    # And now we're in sort of terrible hack mode.. TODO clean this mess up whenA
-    # tests are fixed again. But if we got stuff forwarded, then our local client
-    # needs to be informed. So we inform the caller (so it can inform _its_ caller)
-    # and always the locally associated client, leader or follower. Here goes
-    # nothing...
-    Erix.Server.Follower.signal_client(state.commit_index, commit_index, state)
-
-    # End of dirty code. Do bookkeeping of outstanding client replies and return.
-    leader_state = %{leader_state | client_replies: client_replies}
-    state = %{state | current_state_data: leader_state, commit_index: commit_index}
+    # Check whether we can send any replies to clients.
+    state = commit_state(state)
     # For now, send an empty append_entries on every tick. TODO optimize this
     ping_peers(state)
   end
@@ -131,18 +114,13 @@ defmodule Erix.Server.Leader do
       # Update match_index, next_index
       match_index = Map.put(leader_state.match_index, from, outstanding_index)
       next_index = Map.put(leader_state.next_index, from, outstanding_index + 1)
-      # If this forwards the committed_index, do so
-      commit_index = calculate_commit_index(match_index, log_last_offset(state), state.commit_index)
-      # If this moves the committed_index past outstanding client replies, send replies.
-      client_replies = reply_to_clients(leader_state.client_replies, commit_index)
-      # And send our regards to our local friend as well, if needed.
-      Erix.Server.Follower.signal_client(state.commit_index, commit_index, state)
-      # Save state
-      leader_state = %{leader_state | last_ping: Map.delete(leader_state.last_ping, from),
+      leader_state = %{leader_state |
+                       last_ping: Map.delete(leader_state.last_ping, from),
                        match_index: match_index,
-                       next_index: next_index,
-                      client_replies: client_replies}
-      %{state | current_state_data: leader_state, commit_index: commit_index}
+                       next_index: next_index}
+      state = %{state | current_state_data: leader_state}
+      # If this changed our commit state, handle that
+      commit_state(state)
     else
       # We had nothing for the peer, ignore
       state
@@ -239,5 +217,24 @@ defmodule Erix.Server.Leader do
   end
   deft _calculate_commit_index(match_index, last_index, commit_index) do
     calculate_commit_index(match_index, last_index, commit_index)
+  end
+
+  # commit state if we have new information on the global state.
+  defp commit_state(state) do
+    leader_state = state.current_state_data
+    commit_index = calculate_commit_index(leader_state.match_index,
+      log_last_offset(state), state.commit_index)
+    # If we have a new commit index, notify our clients - both the local
+    # one and any ones with outstanding replies. This may signal our local
+    # client twice, but it's local and idempotent so we don't care too much (yet).
+    client_replies = if commit_index > state.commit_index do
+      client_replies = reply_to_clients(leader_state.client_replies, commit_index)
+      Erix.Server.Common.signal_client(state.commit_index, commit_index, state)
+      client_replies
+    else
+      leader_state.client_replies
+    end
+    leader_state = %{leader_state | client_replies: client_replies}
+    %{state | current_state_data: leader_state, commit_index: commit_index}
   end
  end

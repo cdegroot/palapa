@@ -1,6 +1,6 @@
 defmodule Erix.Server.Follower do
   @moduledoc """
-  Implementation of Follower state
+  Implementation of Follower state.
   """
   require Logger
   use Erix.Constants
@@ -81,22 +81,7 @@ defmodule Erix.Server.Follower do
 
   defp update_commit_index(leader_commit, state) do
     new_commit_index = min(leader_commit, log_last_offset(state))
-    signal_client(state.commit_index, new_commit_index, state)
+    Erix.Server.Common.signal_client(state.commit_index, new_commit_index, state)
     %{state | commit_index: new_commit_index}
-  end
-
-  # Signal our client that the commit index has been updated.
-  def signal_client(current_commit_index, new_commit_index, state) do
-    # TODO I don't really like how we construct the client reference here.
-    # Maybe something observer-style? The Process.registered() call makes it
-    # a complete hack.
-    client_name = Erix.Node.client_name(state.node_name)
-    client_exists = Process.registered() |> Enum.any?(fn(n) -> n == client_name end)
-    if new_commit_index > current_commit_index and client_exists do
-      for offset <- (current_commit_index+1)..new_commit_index do
-        {_offset, entry} = log_at(offset, state)
-        Erix.Client.apply_state(client_name, entry)
-      end
-    end
   end
 end
