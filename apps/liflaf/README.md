@@ -26,8 +26,8 @@ synchronization daemon.
 * [x] `~/.liflaf/id` is a one-time created unique id for the node.
 * [x] `~/.liflaf/peers` is a file with a list of Erlang node names that are peers.
 * [x] A Node has `~/LifLaf/` as the shared folder (all paths from here are relative)
-* [ ] A Node reads its id on startup, and globally registers itself under that name.
-* [ ] A Node reads its peers file on startup and attempts to connect with all of them.
+* [x] A Node reads its id on startup, and globally registers itself under that name.
+* [x] A Node reads its peers file on startup and attempts to connect with all of them.
 
 ## Basic initial synchronization
 
