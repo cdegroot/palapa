@@ -23,9 +23,9 @@ synchronization daemon.
 
 ## Basic networking
 
-* [ ] `~/.liflaf/id` is a one-time created unique id for the node.
-* [ ] `~/.liflaf/peers` is a file with a list of Erlang node names that are peers.
-* [ ] A Node has `~/LifLaf/` as the shared folder (all paths from here are relative)
+* [x] `~/.liflaf/id` is a one-time created unique id for the node.
+* [x] `~/.liflaf/peers` is a file with a list of Erlang node names that are peers.
+* [x] A Node has `~/LifLaf/` as the shared folder (all paths from here are relative)
 * [ ] A Node reads its id on startup, and globally registers itself under that name.
 * [ ] A Node reads its peers file on startup and attempts to connect with all of them.
 
@@ -48,10 +48,8 @@ synchronization daemon.
 
 It runs on my LAN. Security is optional. So this might never get done :-)
 
-* [ ] A Node uses a secure protocol to talk to other nodes, based on SSH. See
-      for example [this talk](http://www.erlang-factory.com/upload/presentations/214/ErlangFactorySFBay2010-KenjiRikitake.pdf).
-* [ ] Nodes need a pre-shared key, stored in `~/.liflaf/psk` to be able to talk to other
-      nodes with the same PSK.
+* [ ] A Node uses a secure protocol to talk to other nodes, based on SSH. See for example [this talk](http://www.erlang-factory.com/upload/presentations/214/ErlangFactorySFBay2010-KenjiRikitake.pdf) and [the base docs](http://erlang.org/doc/apps/erts/alt_dist.html).
+* [ ] Nodes need a pre-shared key, stored in `~/.liflaf/psk` to be able to talk to other nodes with the same PSK.
 * [ ] Optionally, the PSK is found in `~/.liflaf/psk.enc` which will make the node ask for a password to decrypt the PSK. This is the most secure mode.
 
 ## Cool stuff

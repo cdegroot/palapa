@@ -25,6 +25,8 @@ defmodule Liflaf.Mixfile do
   defp deps do
     # Newer version exist, but test.watch uses this one.
     [{:fs, "~> 2.12"},
-     {:xxhash, "~> 0.2.0"}]
+     {:xxhash, "~> 0.2.0"},
+     {:uuid, "~> 1.1"},
+     {:simpler, in_umbrella: true}]
   end
 end
