@@ -1,4 +1,8 @@
 defmodule LifLaf.NodeConfig do
+  @moduledoc """
+  This module interacts with the configuration in ~/.liflaf.
+  """
+
   use LifLaf.Constants
 
   def ensure_config_dir(file_mod) do

@@ -29,7 +29,7 @@ defmodule LifLaf.NodeTest do
       expect_call connect("baz@quux.com")
     end
 
-    {:ok, pid} = Node.start_link(config_mod, node_mod)
+    {:ok, _pid} = Node.start_link(config_mod, node_mod)
 
     Mock.verify(config_mock)
     Mock.verify(node_mock)
