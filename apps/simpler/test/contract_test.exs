@@ -3,7 +3,7 @@ defmodule Simpler.ContractTest do
 
   defmodule SimplePre do
     use Simpler.Contract
-    precondition do: op_one > op_two
+    precondition op_one > op_two
     def mymethod(op_one, op_two) do
       op_one - op_two
     end
@@ -30,7 +30,7 @@ defmodule Simpler.ContractTest do
 
   defmodule SimplePost do
     use Simpler.Contract
-    postcondition do: result > 0
+    postcondition result > 0
     def mymethod(op_one, op_two) do
       op_one - op_two
     end
@@ -56,19 +56,49 @@ defmodule Simpler.ContractTest do
 
   defmodule MultipleHeads do
     use Simpler.Contract
-    precondition do: op_two < 10
-    postcondition do: result > 0
+    precondition op_two < 10
+    postcondition result > 0
     def method(:one, op_two) do
       10 + op_two
     end
     def method(:two, op_two) do
       20 + op_two
     end
-    def method(op_one, op_two) do
+    def method(_op_one, op_two) do
       30 + op_two
     end
   end
   test "Multiple function heads work" do
     assert MultipleHeads.method(:one, 1) == 11
+  end
+
+  defmodule MultiplePreconditions do
+    use Simpler.Contract
+    precondition op_one > 10
+    precondition op_two < 10
+    def method(op_one, op_two) do
+      op_one + op_two
+    end
+  end
+  test "multiple preconditions accepted" do
+    assert MultiplePreconditions.method(12, 4) == 16
+  end
+  test "Contract method rejects first precondition" do
+    try do
+      MultiplePreconditions.method(2, 4)
+      raise "assertion didn't trigger!"
+    rescue
+      _e in [ExUnit.AssertionError] -> nil
+    e -> raise(e)
+    end
+  end
+  test "Contract method rejects second precondition" do
+    try do
+      MultiplePreconditions.method(2, 14)
+      raise "assertion didn't trigger!"
+    rescue
+      _e in [ExUnit.AssertionError] -> nil
+    e -> raise(e)
+    end
   end
 end
