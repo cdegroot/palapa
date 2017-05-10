@@ -47,7 +47,7 @@ defmodule Amnesix.WorkersSupervisor do
 
   def handle_call(:remove_partitions, _from, state) do
     router_state = RoutingSupervisor.shutdown(state.router_state)
-    {:reply, :ok, %State{ state | router_state: router_state}}
+    {:reply, :ok, %State{state | router_state: router_state}}
   end
 
   def handle_call({:process_message, partition, key, value}, _from, state) do
