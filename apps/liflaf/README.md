@@ -10,6 +10,8 @@ not superhappy with the complexity of [Git Annex](https://git-annex.branchable.c
 and I thought that it should be relatively simple in Elixir to build a
 synchronization daemon.
 
+This is a longer-term project I work on when I want to.
+
 # RDD (Readme Driven Development)
 
 ## Assumptions
@@ -31,8 +33,8 @@ synchronization daemon.
 
 ## Basic initial synchronization
 
-* [ ] A Node constructs a Merkle tree by having a ~/.dir_hash xxHash in every directory.
-* [ ] ~/.dir_hash contains hashes for the directory (including its children) and each file.
+* [x] A Node constructs a Merkle tree by having a ~/.dir_hash xxHash in every directory.
+* [x] ~/.dir_hash contains hashes for the directory (including its children) and each file.
 * [ ] Every second, a node sends the hash of its root directory to its peers.
 * [ ] If there is a hash mismatch, the receiving node sends the hashes of the next directory level back as [{dirname, hash}] tuples.
 * [ ] When two nodes figure out which directory changed, they exchange a filelist as [{filename, hash, timestamp}] tuples.

@@ -5,6 +5,18 @@ defmodule LifLaf.NodeTest do
 
   alias LifLaf.Node
 
+  def dummy_fs do
+    {:ok, {mod, _pid}} = Mock.with_expectations do
+      expect_call open(), reply: 42
+    end
+    mod
+  end
+  def dummy_node do
+    {:ok, {mod, _pid}} = Mock.with_expectations do
+    end
+    mod
+  end
+
   test "A node globally registers itself under its id" do
     uuid = UUID.uuid4
     name = String.to_atom(uuid)
@@ -13,7 +25,7 @@ defmodule LifLaf.NodeTest do
       expect_call read_config(), reply: config
     end
 
-    {:ok, pid} = Node.start_link(config_mod)
+    {:ok, pid} = Node.start_link(config_mod, dummy_node(), dummy_fs())
 
     assert :global.whereis_name(name) == pid
     Mock.verify(config_mock)
@@ -29,9 +41,15 @@ defmodule LifLaf.NodeTest do
       expect_call connect("baz@quux.com")
     end
 
-    {:ok, _pid} = Node.start_link(config_mod, node_mod)
+    {:ok, _pid} = Node.start_link(config_mod, node_mod, dummy_fs())
 
     Mock.verify(config_mock)
     Mock.verify(node_mock)
+  end
+
+  test "Every second, a node sends the hash of its root directory to its peers" do
+    # Every second is done by a ticker so we test what happens when a :tick is received
+
+    # Start a slave host and us as a mock, assert we get the message back.
   end
 end

@@ -14,17 +14,20 @@ defmodule Simpler.Contract do
   any head of the function that follows. Postconditions can use the variable
   `result` which will hold the result of the function (so, err, yeah - the
   `Simpler.Contract.def` macro is not hygienic - don't use `result` in your
-  own code. Although it usually should not conflict).
+  own code. Although it usually should not conflict as this result is only
+  assigned and used _after_ the last line of your method body's code).
   """
 
-  @pre :__contract__pre__
+  @pre  :__contract__pre__
   @post :__contract__post__
-  @fun   :__contract__fn__
+  @fun  :__contract__fn__
 
   defmacro __using__(_opts) do
     quote do
       import Kernel, except: [def: 2]
       import Simpler.Contract, only: [def: 2, precondition: 1, postcondition: 1]
+      Module.register_attribute(__MODULE__, :pre, accumulate: true)
+      Module.register_attribute(__MODULE__, :post, accumulate: true)
     end
   end
 

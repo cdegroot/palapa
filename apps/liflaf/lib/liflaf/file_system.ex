@@ -17,7 +17,7 @@ defmodule LifLaf.FileSystem do
     |> Enum.sort
     stats = entries
     |> Enum.map(fn(entry) ->
-      {entry, file_mod.stat(mkpath(dir, entry), [time: :posix])}
+      {entry, file_mod.stat!(mkpath(dir, entry), [time: :posix])}
     end)
     grouped = stats
     |> Enum.group_by(fn({_, stat}) -> stat.type
@@ -44,7 +44,7 @@ defmodule LifLaf.FileSystem do
   defp hash_file(file_mod, file, stat) do
     # TODO keep this (and thus the binary) in a separate process for simpler GC?
     file
-    |> file_mod.read
+    |> file_mod.read!
     |> :xxhash.hash64
   end
 
