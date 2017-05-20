@@ -15,7 +15,7 @@ defmodule LifLaf.NodeConfig do
     if file_mod.exists?(@id_file_name) do
       file_mod.read!(@id_file_name)
     else
-      new_id = UUID.uuid4()
+      new_id = Simpler.UniqueId.unique_id()
       file_mod.write!(@id_file_name, new_id, [:binary])
       new_id
     end

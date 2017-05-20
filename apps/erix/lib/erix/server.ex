@@ -91,7 +91,7 @@ defmodule Erix.Server do
     |> Peer.initial_state()
     state = PersistentState.initialize_persistence(persistence_ref, initial_state)
     if PersistentState.node_uuid(state) == nil do
-      PersistentState.set_node_uuid(UUID.uuid1(), state)
+      PersistentState.set_node_uuid(Erix.unique_id(), state)
     end
     {:ok, state}
   end

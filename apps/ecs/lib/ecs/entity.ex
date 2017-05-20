@@ -19,7 +19,7 @@ defmodule ECS.Entity do
     else
       components
     end
-    id = IdComponent.new([value: UUID.uuid1()])
+    id = IdComponent.new([value: Simpler.UniqueId.unique_id])
     state = [id | components]
       |> Enum.map(fn component -> {component_atom(component), component} end)
       |> Enum.into(%{})

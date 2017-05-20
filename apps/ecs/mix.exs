@@ -21,7 +21,6 @@ defmodule Ecs.Mixfile do
   end
 
   defp deps do
-    [{:uuid, "~> 1.1"},
-     {:graphmath, "~> 1.0.2"}]
+    [{:graphmath, "~> 1.0.2"}]
   end
 end

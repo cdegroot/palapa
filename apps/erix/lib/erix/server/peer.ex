@@ -49,7 +49,7 @@ defmodule Erix.Server.Peer do
 
   @doc "Make a completely new Peer, pointing to myself"
   def new do
-    {UUID.uuid1(), Erix.Server, self()}
+    {Erix.unique_id(), Erix.Server, self()}
   end
 
   @doc "Make a new Peer with the indicated values"
@@ -100,5 +100,5 @@ defmodule Erix.Server.Peer do
 
   import Simpler.TestSupport
 
-  deft for_mock({mod, pid}), do: new(UUID.uuid4, mod, pid)
+  deft for_mock({mod, pid}), do: new(Erix.unique_id(), mod, pid)
 end

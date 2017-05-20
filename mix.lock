@@ -15,6 +15,7 @@
   "idna": {:hex, :idna, "4.0.0", "10aaa9f79d0b12cf0def53038547855b91144f1bfcc0ec73494f38bb7b9c4961", [:rebar3], []},
   "jsx": {:hex, :jsx, "2.8.2", "7acc7d785b5abe8a6e9adbde926a24e481f29956dd8b4df49e3e4e7bcc92a018", [:mix, :rebar3], []},
   "kafka_protocol": {:hex, :kafka_protocol, "0.9.2", "26dbec3174c79236b6b6fe11f3100bab2046956e577047e4dcaeacb2309d9dda", [:make, :rebar, :rebar3], [{:snappyer, "1.2.0", [hex: :snappyer, optional: false]}]},
+  "lfe": {:git, "https://github.com/rvirding/lfe", "d722d3662b191b61310dc9bba78f9a77f512b742", [tag: "1.2.1"]},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], []},
   "mix_test_watch": {:hex, :mix_test_watch, "0.4.0", "7e44b681b0238999d4c39b5beed77b4ac45aef1c112a763aae414bdb5bc34523", [:mix], [{:fs, "~> 2.12", [hex: :fs, optional: false]}]},

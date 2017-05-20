@@ -61,7 +61,7 @@ defmodule Erix.Client do
     counter = state.counter + 1
     self_ref = {Erix.Client, self()}
     case Erix.Server.client_command(state.node_name, self_ref, counter, {key, value}) do
-      reply = {:error, reason} ->
+      reply = {:error, _reason} ->
         {:reply, reply, %{state | counter: counter}}
       :ok ->
         to_complete = Map.put(state.to_complete, counter, {from, key, value})

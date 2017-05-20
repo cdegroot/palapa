@@ -156,7 +156,7 @@ defmodule Erix.RulesForLeadersTest do
   end
 
   test "Send AppendEntries if last log index >= nextIndex for a follower" do
-    leader = {UUID.uuid4(), Erix.Server, self()}
+    leader = {Erix.unique_id(), Erix.Server, self()}
     {:ok, db} = Mock.with_expectations do
       expect_call node_uuid(_pid), reply: ServerMaker.fixed_uuid(), times: :any
       expect_call log_last_offset(_pid), reply: 6

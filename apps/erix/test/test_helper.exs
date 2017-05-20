@@ -1,7 +1,7 @@
 ExUnit.start()
 
 defmodule ServerMaker do
-  @fixed_uuid UUID.uuid4()
+  @fixed_uuid Erix.unique_id()
   def fixed_uuid, do: @fixed_uuid
 
   def random_node_name, do: String.to_atom("erixtest_#{:rand.uniform(100_000_000)}")
@@ -61,7 +61,7 @@ defmodule ServerMaker do
       expect_call node_uuid(_pid), reply: @fixed_uuid, times: :any
     end
     server = new_candidate(db)
-    mock_peer = Peer.new(UUID.uuid4(), Erix.Server, self())
+    mock_peer = Peer.new(Erix.unique_id(), Erix.Server, self())
     Erix.Server.add_peer(server, mock_peer)
     Erix.Server.vote_reply(server, 0, true)
     ensure_is(server, :leader)

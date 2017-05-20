@@ -26,7 +26,6 @@ defmodule Liflaf.Mixfile do
     # Newer version exist, but test.watch uses this one.
     [{:fs, "~> 2.12"},
      {:xxhash, git: "https://github.com/barrel-db/erlang-xxhash"},
-     {:uuid, "~> 1.1"},
      {:simpler, in_umbrella: true}]
   end
 end

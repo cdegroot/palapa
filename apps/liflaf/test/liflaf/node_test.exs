@@ -18,7 +18,7 @@ defmodule LifLaf.NodeTest do
   end
 
   test "A node globally registers itself under its id" do
-    uuid = UUID.uuid4
+    uuid = Simpler.UniqueId.unique_id_string()
     name = String.to_atom(uuid)
     config = %{id: uuid, peers: []}
     {:ok, config_mock = {config_mod, _config_pid}} = Mock.with_expectations do
@@ -50,6 +50,6 @@ defmodule LifLaf.NodeTest do
   test "Every second, a node sends the hash of its root directory to its peers" do
     # Every second is done by a ticker so we test what happens when a :tick is received
 
-    # Start a slave host and us as a mock, assert we get the message back.
+    # Start a host with self() as a mock, assert we get the message back.
   end
 end

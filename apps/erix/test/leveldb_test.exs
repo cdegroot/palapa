@@ -79,12 +79,12 @@ defmodule Erix.LevelDBTest do
 
   test "Node UUID correctly written to database", context do
     {db, state} = state_and_db_from_context(context)
-    uuid = UUID.uuid4()
+    uuid = Erix.unique_id()
 
     PersistentState.set_node_uuid(uuid, state)
 
     {:ok, uuid_bytes} = Exleveldb.get(db, @node_uuid_key)
-    assert UUID.binary_to_string!(uuid_bytes) == uuid
+    assert uuid_bytes == uuid
   end
 
   test "Log last offset returns 0 on an empty database", context do

@@ -60,12 +60,12 @@ defmodule Erix.LevelDB do
   def node_uuid(db) do
     case Exleveldb.get(db, @node_uuid_key) do
       :not_found -> nil
-      {:ok, uuid_bytes} -> UUID.binary_to_string!(uuid_bytes)
+      {:ok, uuid} -> uuid
     end
   end
 
   def set_node_uuid(db, uuid) do
-    :ok = Exleveldb.put(db, @node_uuid_key, UUID.string_to_binary!(uuid))
+    :ok = Exleveldb.put(db, @node_uuid_key, uuid)
   end
 
   def append_entries_to_log(db, pos, entries) do

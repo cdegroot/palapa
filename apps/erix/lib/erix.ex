@@ -4,15 +4,11 @@ defmodule Erix do
   """
 
   @doc """
-  Hello world.
+  Generate a unique ID.
 
-  ## Examples
-
-      iex> Erix.hello
-      :world
-
+  This function is used in several places throughout source and test code of Erix.
+  Rather than splattering the code with uuid calls, we funnel them through here
+  so we can easily swap it out if we want to.
   """
-  def hello do
-    :world
-  end
+  defdelegate unique_id, to: Simpler.UniqueId, as: :unique_id_string
 end

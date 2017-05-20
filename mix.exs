@@ -23,9 +23,9 @@ defmodule Palapa.Mixfile do
 
   defp deps do
     [{:excoveralls, "~> 0.6", only: :test},
-     {:credo, "~> 0.5", only: [:dev, :test]},
+     {:credo, "~> 0.7", only: [:dev, :test]},
      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-     {:mix_test_watch, "~> 0.3", only: :dev}]
+     {:mix_test_watch, "~> 0.3", only: [:dev, :test]}]
   end
 end
 

@@ -13,7 +13,7 @@ defmodule Erix.Server.PeerTest do
   end
 
   test "a peer can be constructed of preset values" do
-    uuid = UUID.uuid4()
+    uuid = Erix.unique_id()
     peer = Erix.Server.Peer.new(uuid, __MODULE__, self())
 
     assert uuid_of(peer) == uuid
@@ -22,7 +22,7 @@ defmodule Erix.Server.PeerTest do
   end
 
   test "just the UUID can be provided" do
-    uuid = UUID.uuid4()
+    uuid = Erix.unique_id()
     peer = Erix.Server.Peer.new(uuid)
 
     assert uuid_of(peer) == uuid
@@ -31,7 +31,7 @@ defmodule Erix.Server.PeerTest do
   end
 
   test "self peer" do
-    uuid = UUID.uuid4()
+    uuid = Erix.unique_id()
     {:ok, db} = Mock.with_expectations do
       expect_call node_uuid(_state), reply: uuid
     end

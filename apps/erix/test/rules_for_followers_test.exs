@@ -14,7 +14,7 @@ defmodule Erix.RulesForFollowersTest do
 
   test "Followers will start an election after the election timeout elapses" do
     {:ok, db} = Mock.with_expectations do
-      expect_call node_uuid(_pid), reply: UUID.uuid4()
+      expect_call node_uuid(_pid), reply: Erix.unique_id()
       expect_call current_term(_pid), reply: nil
       expect_call set_current_term(_pid, 1)
       expect_call log_last_offset(_pid), reply: nil, times: :any
