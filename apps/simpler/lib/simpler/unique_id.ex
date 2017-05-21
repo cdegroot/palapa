@@ -9,10 +9,10 @@ defmodule Simpler.UniqueId do
   """
   def unique_id do
     use Bitwise
-    ((:rand.uniform(4_294_967_296) <<< 96) |||
-     (:rand.uniform(4_294_967_296) <<< 64) |||
-     (:rand.uniform(4_294_967_296) <<< 32) |||
-     (:rand.uniform(4_294_967_296)))
+    (((:rand.uniform(4_294_967_296) - 1) <<< 96) |||
+     ((:rand.uniform(4_294_967_296) - 1) <<< 64) |||
+     ((:rand.uniform(4_294_967_296) - 1) <<< 32) |||
+     ((:rand.uniform(4_294_967_296) - 1)))
   end
 
   @doc """
