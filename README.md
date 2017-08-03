@@ -5,6 +5,8 @@
 I got fed up of having my experiments, tools, libraries spread
 out over lots of GH repos. Let's try one very large umbrella.
 
+![Nice Picture Of A Palapa I Found On The Interwebs](https://nyxonenterprises.files.wordpress.com/2012/05/jacky_li_beach_palapa_hires.jpg)
+
 ## Included apps
 
 In alphabetical order:
