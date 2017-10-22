@@ -77,7 +77,7 @@ defmodule Simpler.Mock do
     |> Enum.map(fn({:expect_call, _, expectation}) ->
       {msg, args, reply} = call_to_message(expectation)
       args = args || []
-      forwarder = Simpler.Mock.Generator.make_forwarder({msg, length(args)}, quote do: @pid)
+      forwarder = Simpler.Mock.Generator.make_forwarder({msg, length(args)}, quote do: :erlang.binary_to_term(@pid))
       expectation = quote do
         Simpler.Mock.Server.expect_call(pid, {unquote(msg), unquote(args), unquote(reply)})
       end
@@ -88,7 +88,8 @@ defmodule Simpler.Mock do
     forwarders = forwarders |> Macro.escape
     quote do
       {:ok, pid} = Simpler.Mock.Server.start_link()
-      putattr = quote do: Module.put_attribute(__MODULE__, :pid, unquote(pid))
+      serialized_pid = :erlang.term_to_binary(pid)
+      putattr = quote do: Module.put_attribute(__MODULE__, :pid, unquote(serialized_pid))
       forwarders = [putattr | unquote(forwarders)]
       random_module_name = Integer.to_string(:rand.uniform(100000000000))
       mock_module = Module.concat([unquote(caller_mod), unquote(caller_fun), random_module_name])

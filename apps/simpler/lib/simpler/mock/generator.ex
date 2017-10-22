@@ -5,6 +5,9 @@ defmodule Simpler.Mock.Generator do
   """
   require Logger
 
+  @doc """
+  Generate a function that forwards calls to the pid of the started mock module.
+  """
   def make_forwarder({func, arity}, mock_pid) do
     args = make_arg_list(arity)
     quote do

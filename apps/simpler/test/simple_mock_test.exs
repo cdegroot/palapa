@@ -6,7 +6,6 @@ defmodule SimpleMockTest do
   use ExUnit.Case, async: true
   require Logger
   use Simpler.Mock
-
   defmodule ModuleUnderTest do
     use GenServer
 
