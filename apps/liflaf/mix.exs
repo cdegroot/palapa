@@ -25,7 +25,7 @@ defmodule Liflaf.Mixfile do
   defp deps do
     # Newer version exist, but test.watch uses this one.
     [{:fs, "~> 2.12"},
-     {:xxhash, git: "https://github.com/barrel-db/erlang-xxhash"},
+     {:xxhash, git: "https://github.com/cdegroot/erlang-xxhash"},
      {:simpler, in_umbrella: true}]
   end
 end

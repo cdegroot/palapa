@@ -25,4 +25,4 @@
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], []},
   "supervisor3": {:hex, :supervisor3, "1.1.5", "5f3c487a6eba23de0e64c06e93efa0eca06f40324a6412c1318c77aca6da8424", [:make, :rebar, :rebar3], []},
   "uuid": {:hex, :uuid, "1.1.7", "007afd58273bc0bc7f849c3bdc763e2f8124e83b957e515368c498b641f7ab69", [:mix], []},
-  "xxhash": {:git, "https://github.com/barrel-db/erlang-xxhash", "13f8543989f7bbae37e23c41a5a9e8d4b3ac0b6a", []}}
+  "xxhash": {:git, "https://github.com/cdegroot/erlang-xxhash", "00893d4ff7617373f7abfc542eb28e7a4faa3ad3", []}}
