@@ -1,0 +1,16 @@
+# Makefile for Linux targets
+NANOVG_SRC=c_src/nanovg
+WRAPPER_SRC=c_src
+
+# This makefile should get proper dependency management at some time.
+
+all: setup compile
+
+setup:
+	git submodule update --remote
+	(cd $(NANOVG_SRC); premake4 gmake)
+
+# TODO non-debug builds for e.g. prod Mix env?
+compile: 
+	(cd $(NANOVG_SRC)/build; make nanovg)
+	$(CC) $(CFLAGS) -I$(NANOVG_SRC)/src -o uderzo c_src/uderzo.c -L$(NANOVG_SRC)/build -lglfw -lnanovg -lGL -lGLU -lm -lGLEW

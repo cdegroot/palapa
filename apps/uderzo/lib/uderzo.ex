@@ -1,6 +1,6 @@
-defmodule Vectorgraphix do
+defmodule Uderzo do
   @moduledoc """
-  Documentation for Vectorgraphix.
+  Documentation for Uderzo.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule Vectorgraphix do
 
   ## Examples
 
-      iex> Vectorgraphix.hello
+      iex> Uderzo.hello
       :world
 
   """

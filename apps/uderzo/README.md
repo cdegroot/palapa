@@ -1,8 +1,8 @@
-# Vectorgraphix
+# Uderzo
 
-**TODO: Invent Asterix character named vectorgraphix**
-
-Vectorgraphix is an idea at the moment, nothing more. Maybe some code will follow. 
+Uderzo is an idea at the moment, nothing more. Maybe some code will follow. Needless to
+say, named after the Asterix creator, the half from the genius duo that made the images
+(if I ever write a Elixir-based wordprocessor, it'll be called Goscinny. Promise).
 
 The idea is to have an Elixir GUI in the following way:
 
@@ -21,3 +21,14 @@ Steps:
 * [ ] Receive a mouseclick
 * [ ] Lots and lots and lots of hard work to tie everything together.
 
+# Setup
+
+* Have premake4 installed
+* `make setup`
+* Have GL, glfw, .. installed. 
+* mix deps.get
+* mix compile
+* maybe things will now work. 
+
+Note: we're doing nothing yet to make this work on non-linux envs, but also nothing to 
+make that hard. Nanovg is portable, and our wrapper executable should be minimal.

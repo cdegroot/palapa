@@ -1,9 +1,23 @@
-defmodule Vectorgraphix.Mixfile do
+defmodule Mix.Tasks.Compile.Native do
+  def run(_) do
+    case :os.type do
+      {_, :linux} ->
+        {result, _error_code} = System.cmd("make", ["-f", "Makefile.linux", "compile"], stderr_to_stdout: true)
+        IO.binwrite(result)
+      _ ->
+        IO.warn("Operating system not yet supported")
+        exit(1)
+    end
+    :ok
+  end
+end
+
+defmodule Uderzo.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :vectorgraphix,
+      app: :uderzo,
       version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -11,7 +25,8 @@ defmodule Vectorgraphix.Mixfile do
       lockfile: "../../mix.lock",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      compilers: [:native | Mix.compilers ]
     ]
   end
 

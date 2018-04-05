@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :vectorgraphix, key: :value
+#     config :uderzo, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:vectorgraphix, :key)
+#     Application.get_env(:uderzo, :key)
 #
 # You can also configure a 3rd-party app:
 #

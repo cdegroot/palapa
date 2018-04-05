@@ -1,0 +1,3 @@
+[submodule "apps/uderzo/c_src/nanovg"]
+	path = apps/uderzo/c_src/nanovg
+	url = git@github.com:memononen/nanovg
