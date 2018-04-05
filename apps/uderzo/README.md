@@ -32,3 +32,11 @@ Steps:
 
 Note: we're doing nothing yet to make this work on non-linux envs, but also nothing to 
 make that hard. Nanovg is portable, and our wrapper executable should be minimal.
+
+# Protocol
+
+The pipe protocol has two modes: ASCII and binary. In either case, most of the code is generated. The
+ASCII mode is handy for debugging, but binary should be the default. 
+
+To get started, we KISS and just use erlang term format. Later on we can have some hand-optimized
+RPC going on.

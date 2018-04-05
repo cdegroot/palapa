@@ -9,11 +9,20 @@
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
+#include <erl_interface.h>
+
 int main() {
+  char buffer[MAXATOMLEN];
+  int index = 0;
+
   if (!glfwInit()) {
 		printf("Failed to init GLFW.");
 		return -1;
 	}
+
+  memset(buffer, 0, MAXATOMLEN);
+  ei_encode_atom(buffer, &index, "test");
+  printf("encoded shit to %s\n", buffer);
 
   puts("Hello, world");
 }
