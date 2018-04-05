@@ -16,7 +16,7 @@ The reason to separate the vector graphics and the GUI are multiple:
 
 Steps:
 
-* [ ] Build a basic wrapper executable
+* [x] Build a basic wrapper executable
 * [ ] Open a window, show a triangle
 * [ ] Receive a mouseclick
 * [ ] Lots and lots and lots of hard work to tie everything together.
