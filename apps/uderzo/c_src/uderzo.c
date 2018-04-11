@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #define GLFW_INCLUDE_ES3
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
@@ -30,15 +31,16 @@
 // 8. BEAM-side, there should be a concept of flushing so that we
 //    can batch commands. This is not visible here.
 
-#define BUF_SIZE 65536 // we try to fit most of our shit in here.
+#define BUF_SIZE 65536 // we try to fit most of our shit in here until proven wrong.
 
-#define SEND_ERLANG_OK writeSingleAtom("ok")
-#define SEND_ERLANG_ERR(x) writeTuple2("error", x)
+#define SEND_ERLANG_OK     write_single_atom("ok")
+#define SEND_ERLANG_ERR(x) write_response_tuple2("error", x)
 
 extern void errorcb(int error, const char *desc);
-extern void writeSingleAtom(char *atom);
-extern void writeTuple2(char *atom, char *message);
-extern void readLoop();
+extern void write_single_atom(char *atom);
+extern void write_response_tuple2(char *atom, char *message);
+extern void write_response_bytes(char *data, unsigned short len);
+extern void read_loop();
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
@@ -57,11 +59,11 @@ int main() {
 
     SEND_ERLANG_OK;
 
-    readLoop();
+    read_loop();
 }
 
 void handle_command(char *command, unsigned short len);
-void readLoop() {
+void read_loop() {
     // Protocol: 2 bytes with big endian length, then the actual command.
     // So maximum size we can read is 65535. We're not even gonna allocate
     // that with today's stack sizes and a single process. Once we start pushing
@@ -78,13 +80,14 @@ void readLoop() {
         if (bytes_read < 0) {
             strerror_r(bytes_read, buffer, BUF_SIZE);
             SEND_ERLANG_ERR(buffer);
+        } else if (bytes_read < size) {
+            SEND_ERLANG_ERR("Read less bytes than expected");
+        } else {
+            handle_command(buffer, bytes_read);
         }
-
-        handle_command(buffer, bytes_read);
     }
 }
 
-#define SAFE_WRITE(buffer, index) assert(write(STDOUT_FILENO, buffer, index) == index)
 
 void handle_command(char *command, unsigned short len) {
     // For now, we parse the command, then echo it back.
@@ -92,25 +95,20 @@ void handle_command(char *command, unsigned short len) {
     //   {cast, <<function_name>>, args.... [, callback_pid]}
 
     // However, to get started, just echo:
-    unsigned char size_buffer[2];
-    size_buffer[0] = len >> 8;
-    size_buffer[1] = len & 0xff;
-
-    SAFE_WRITE(size_buffer, 2);
-    SAFE_WRITE(command, len);
+    write_response_bytes(command, len);
 }
 
-void writeSingleAtom(char *atom) {
+void write_single_atom(char *atom) {
     char buffer[MAXATOMLEN];
     int index = 0;
 
     ei_encode_atom(buffer, &index, atom);
 
-    SAFE_WRITE(buffer, index);
+    write_response_bytes(buffer, index);
 }
 
 // Not entirely correctly named, but usually what we want - an {atom, binary} 2-tuple
-void writeTuple2(char *atom, char *message) {
+void write_response_tuple2(char *atom, char *message) {
     char buffer[BUF_SIZE];
     int index = 0;
 
@@ -118,7 +116,22 @@ void writeTuple2(char *atom, char *message) {
     ei_encode_atom(buffer, &index, atom);
     ei_encode_binary(buffer, &index, message, strlen(message));
 
-    SAFE_WRITE(buffer, index);
+    write_response_bytes(buffer, index);
+}
+
+void write_response_bytes(char *bytes, unsigned short len) {
+    struct iovec iov[2];
+    unsigned char size_buffer[2];
+
+    size_buffer[0] = len >> 8;
+    size_buffer[1] = len & 0xff;
+
+    iov[0].iov_base = size_buffer;
+    iov[0].iov_len  = 2;
+    iov[1].iov_base = bytes;
+    iov[1].iov_len  = len;
+
+    assert (writev(STDOUT_FILENO, iov, 2) == len + 2);
 }
 
 void errorcb(int error, const char *desc) {
