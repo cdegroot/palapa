@@ -1,18 +1,16 @@
 defmodule Uderzo do
   @moduledoc """
-  Documentation for Uderzo.
+  Uderzo application.
+
+  This application basically just starts the supervisor that starts
+  the genserver that talks to the `uderzo` executable.
   """
 
-  @doc """
-  Hello world.
+  use Application
 
-  ## Examples
-
-      iex> Uderzo.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    children = [
+      Uderzo.GraphicsServer]
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 end

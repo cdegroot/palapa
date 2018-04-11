@@ -41,6 +41,7 @@ extern void write_single_atom(char *atom);
 extern void write_response_tuple2(char *atom, char *message);
 extern void write_response_bytes(char *data, unsigned short len);
 extern void read_loop();
+extern void dump_hex(const void* data, size_t size);
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
@@ -57,12 +58,13 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    SEND_ERLANG_OK;
+    fprintf(stderr, "Uderzo graphics executable started up.\n");
 
     read_loop();
 }
 
-void handle_command(char *command, unsigned short len);
+extern void handle_command(char *command, unsigned short len);
+
 void read_loop() {
     // Protocol: 2 bytes with big endian length, then the actual command.
     // So maximum size we can read is 65535. We're not even gonna allocate
@@ -81,8 +83,12 @@ void read_loop() {
             strerror_r(bytes_read, buffer, BUF_SIZE);
             SEND_ERLANG_ERR(buffer);
         } else if (bytes_read < size) {
-            SEND_ERLANG_ERR("Read less bytes than expected");
+            dump_hex(buffer, bytes_read);
+            snprintf(buffer, BUF_SIZE, "Expected %d bytes, got %d\n", size, bytes_read);
+            SEND_ERLANG_ERR(buffer);
         } else {
+            fprintf(stderr, "Handling command of %d bytes:\n", bytes_read);
+            dump_hex(buffer, bytes_read);
             handle_command(buffer, bytes_read);
         }
     }
@@ -131,10 +137,47 @@ void write_response_bytes(char *bytes, unsigned short len) {
     iov[1].iov_base = bytes;
     iov[1].iov_len  = len;
 
+    fprintf(stderr, "Writing response bytes:\n");
+    dump_hex(size_buffer, 2);
+    dump_hex(bytes, len);
     assert (writev(STDOUT_FILENO, iov, 2) == len + 2);
+    fprintf(stderr, "Wrote response bytes\n");
 }
 
 void errorcb(int error, const char *desc) {
     // TODO proper callback on stdout as well.
     fprintf(stderr, "GLFW error %d: %s\n", error, desc);
+}
+
+// For debugging, shamely stolen from github
+// https://gist.githubusercontent.com/ccbrown/9722406/raw/05202cd8f86159ff09edc879b70b5ac6be5d25d0/DumpHex.c
+
+void dump_hex(const void* data, size_t size) {
+    char ascii[17];
+    size_t i, j;
+    ascii[16] = '\0';
+    for (i = 0; i < size; ++i) {
+        fprintf(stderr,"%02X ", ((unsigned char*)data)[i]);
+        if (((unsigned char*)data)[i] >= ' ' && ((unsigned char*)data)[i] <= '~') {
+            ascii[i % 16] = ((unsigned char*)data)[i];
+        } else {
+            ascii[i % 16] = '.';
+        }
+        if ((i+1) % 8 == 0 || i+1 == size) {
+            fprintf(stderr," ");
+            if ((i+1) % 16 == 0) {
+                fprintf(stderr,"|  %s \n", ascii);
+            } else if (i+1 == size) {
+                ascii[(i+1) % 16] = '\0';
+                if ((i+1) % 16 <= 8) {
+                    fprintf(stderr," ");
+                }
+                for (j = (i+1) % 16; j < 16; ++j) {
+                    fprintf(stderr,"   ");
+                }
+                fprintf(stderr,"|  %s \n", ascii);
+            }
+        }
+    }
+    fflush(stderr);
 }

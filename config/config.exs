@@ -18,6 +18,6 @@ end
 
 if Mix.env == :test do
 
-  config :logger, level: :error
+  config :logger, level: :info
 
 end
