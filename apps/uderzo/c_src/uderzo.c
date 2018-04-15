@@ -104,7 +104,7 @@ static void _handle_command(const char *command, unsigned short len, int *index)
     fprintf(stderr, "Got term type %c / %d\n", term.ei_type, term.ei_type);
     switch (term.ei_type) {
     case ERL_SMALL_TUPLE_EXT:
-        assert(term.arity == 2);
+        //assert(term.arity == 2);
         _dispatch_command(command, len, index);
         _handle_command(command, len, index);
         break;
@@ -144,27 +144,30 @@ static void _dispatch_command(const char *buf, unsigned short len, int *index) {
         assert(1 == 0);
     }
 }
-// {comment, <<comment>>}
+
+// @ELIXIR@ comment comment
 static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
     char comment[BUF_SIZE];
     long length;
     assert(ei_decode_binary(buf, index, comment, &length) == 0);
     fprintf(stderr, "Got comment [%s]\n", comment);
 }
-// {window, [width, height, <<title>>]}
+
+// @ELIXIR@ window height,width,title
 static void _dispatch_window(const char *buf, unsigned short len, int *index) {
     char title[BUF_SIZE];
     long length, width, height;
     ei_term term;
 
-    assert(ei_decode_ei_term(buf, index, &term));
-    assert(term.arity == 3);
+    //assert(ei_decode_ei_term(buf, index, &term));
+    //assert(term.arity == 3);
     assert(ei_decode_long(buf, index, &width) == 0);
     assert(ei_decode_long(buf, index, &height) == 0);
     assert(ei_decode_binary(buf, index, title, &length) == 0);
     fprintf(stderr, "Got window (%ld, %ld, [%s])\n", width, height, title);
 }
-// {on_frame, pid}
+
+// @ELIXIR@ on_frame frame_pid
 static void _dispatch_on_frame(const char *buf, unsigned short len, int *index) {
     erlang_pid pid;
     assert(ei_decode_pid(buf, index, &pid) == 0);
