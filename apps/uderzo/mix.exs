@@ -2,8 +2,9 @@ defmodule Mix.Tasks.Compile.Native do
   def run(_) do
     case :os.type do
       {_, :linux} ->
-        {result, _error_code} = System.cmd("make", ["-f", "Makefile.linux", "compile"], stderr_to_stdout: true)
+        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "compile"], stderr_to_stdout: true)
         IO.binwrite(result)
+        0 = error
       _ ->
         IO.warn("Operating system not yet supported")
         exit(1)

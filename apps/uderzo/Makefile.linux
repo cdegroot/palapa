@@ -19,9 +19,9 @@ compile: $(LIBNANOVG) uderzo
 $(LIBNANOVG):
 	(cd $(NANOVG_SRC)/build; make nanovg)
 
-uderzo: c_src/uderzo.c $(LIBNANOVG)
+uderzo: c_src/*.c c_src/*.h $(LIBNANOVG)
 	$(CC) $(CFLAGS) \
     -I$(NANOVG_SRC)/src -I$(ERLANG_PATH)/include \
-    -o uderzo c_src/uderzo.c \
+    -o uderzo c_src/*.c \
     -L$(ERLANG_PATH)/lib -lerl_interface -lei \
     -L$(NANOVG_SRC)/build -lglfw -lnanovg -lGL -lGLU -lm -lGLEW

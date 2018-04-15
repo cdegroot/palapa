@@ -1,9 +1,4 @@
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/uio.h>
 #define GLFW_INCLUDE_ES3
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
@@ -13,35 +8,26 @@
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
-#include <erl_interface.h> // or ei.h? No clue so far.
+#include "uderzo_io.h"
 
 // Comment-driven development.
-// 1. Library initialization is done at program startup time.
-// 1a.For now, there's one global (vg/gl) context.
-// 2. Everything else is manual.
-// 3. For now, we openly admit to using nanovg, glfw, opengl es
-// 3a.So we directly map functions on the protocol, no translation
-// 3b.This should make code generation simpler, eventually
-// 3c.We also don't wrap pointers. They're just opaque handles on
-//    the BEAM side.
-// 4. The render loop is BEAM-side, this code is passive
-// 5. Any GLFW keyboard and mouse events are sent to stdout, async
-// 6. Hence, the stdin/stdout protocol needs to be async
-// 7. Mouse state can also be polled
-// 8. BEAM-side, there should be a concept of flushing so that we
-//    can batch commands. This is not visible here.
-
-#define BUF_SIZE 65536 // we try to fit most of our shit in here until proven wrong.
-
-#define SEND_ERLANG_OK     write_single_atom("ok")
-#define SEND_ERLANG_ERR(x) write_response_tuple2("error", x)
+// [x] 1. Library initialization is done at program startup time.
+// [x] 1a.For now, there's one global (vg/gl) context.
+// [ ] 2. Everything else is manual.
+// [ ] 3. For now, we openly admit to using nanovg, glfw, opengl es
+// [ ] 3a.So we directly map functions on the protocol, no translation
+// [ ] 3b.This should make code generation simpler, eventually
+// [ ] 3c.We also don't wrap pointers. They're just opaque handles on
+//        the BEAM side.
+// [ ] 4. The render loop is BEAM-side, this code is passive
+// [ ] 5. Any GLFW keyboard and mouse events are sent to stdout, async
+// [ ] 6. Hence, the stdin/stdout protocol needs to be async
+// [ ] 7. Mouse state can also be polled
+// [ ] 8. BEAM-side, there should be a concept of flushing so that we
+//        can batch commands. This is not visible here.
 
 extern void errorcb(int error, const char *desc);
-extern void write_single_atom(char *atom);
-extern void write_response_tuple2(char *atom, char *message);
-extern void write_response_bytes(char *data, unsigned short len);
 extern void read_loop();
-extern void dump_hex(const void* data, size_t size);
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
@@ -63,7 +49,7 @@ int main() {
     read_loop();
 }
 
-extern void handle_command(char *command, unsigned short len);
+extern void handle_command(const char *command, unsigned short len);
 
 void read_loop() {
     // Protocol: 2 bytes with big endian length, then the actual command.
@@ -78,7 +64,7 @@ void read_loop() {
         assert(read(STDIN_FILENO, size_buffer, 2) == 2);
         unsigned short size = (size_buffer[0] << 8) + size_buffer[1];
 
-        unsigned short bytes_read = read(STDIN_FILENO, buffer, BUF_SIZE);
+        unsigned short bytes_read = read(STDIN_FILENO, buffer, size);
         if (bytes_read < 0) {
             strerror_r(bytes_read, buffer, BUF_SIZE);
             SEND_ERLANG_ERR(buffer);
@@ -87,97 +73,106 @@ void read_loop() {
             snprintf(buffer, BUF_SIZE, "Expected %d bytes, got %d\n", size, bytes_read);
             SEND_ERLANG_ERR(buffer);
         } else {
-            fprintf(stderr, "Handling command of %d bytes:\n", bytes_read);
-            dump_hex(buffer, bytes_read);
-            handle_command(buffer, bytes_read);
+            fprintf(stderr, "Handling command of %d bytes, size %d:\n", bytes_read, size);
+            dump_hex(buffer, size);
+            handle_command(buffer, size);
         }
     }
 }
 
-
-void handle_command(char *command, unsigned short len) {
+static void _handle_command(const char *command, unsigned short len, int *index);
+static void _dispatch_command(const char *buf, unsigned short len, int *index);
+void handle_command(const char *command, unsigned short len) {
+    int index = 1;
+    _handle_command(command, len, &index); // Skip version number
+}
+static void _handle_command(const char *command, unsigned short len, int *index) {
     // For now, we parse the command, then echo it back.
     // Note that all we accept for now is
     //   {cast, <<function_name>>, args.... [, callback_pid]}
+    // Or, preferably, an array of these.
+    ei_term term;
+
+    if (*index >= len) {
+        fprintf(stderr, "decode done\n");
+        return;
+    }
+
+    int result = ei_decode_ei_term(command, index, &term);
+    fprintf(stderr, "Got result %d index is now 0x%x\n", result, *index);
+    assert(result == 1);
+    fprintf(stderr, "Got term type %c / %d\n", term.ei_type, term.ei_type);
+    switch (term.ei_type) {
+    case ERL_SMALL_TUPLE_EXT:
+        assert(term.arity == 2);
+        _dispatch_command(command, len, index);
+        _handle_command(command, len, index);
+        break;
+    case ERL_LIST_EXT:
+        // A list of commands; we can send this for efficiency. Loop and go.
+        fprintf(stderr, "Handling list is arity %d\n", term.arity);
+        for (int i = 0; i < term.arity; i++) {
+            _handle_command(command, len, index);
+        }
+        break;
+    case ERL_NIL_EXT:
+        fprintf(stderr, "Skip nil\n");
+        break;
+    default:
+        fprintf(stderr, "Unknown term type %c / %d\n", term.ei_type, term.ei_type);
+        assert(1 == 0);
+    }
 
     // However, to get started, just echo:
-    write_response_bytes(command, len);
+    // write_response_bytes(command, len);
 }
-
-void write_single_atom(char *atom) {
-    char buffer[MAXATOMLEN];
-    int index = 0;
-
-    ei_encode_atom(buffer, &index, atom);
-
-    write_response_bytes(buffer, index);
+static void _dispatch_comment(const char *buf, unsigned short len, int *index);
+static void _dispatch_window(const char *buf, unsigned short len, int *index);
+static void _dispatch_on_frame(const char *buf, unsigned short len, int *index);
+static void _dispatch_command(const char *buf, unsigned short len, int *index) {
+    char atom[MAXATOMLEN];
+    assert(ei_decode_atom(buf, index, atom) == 0);
+    fprintf(stderr, "Dispatching %s\n", atom);
+    if (strncmp("comment", atom, 7) == 0) {
+        _dispatch_comment(buf, len, index);
+    } else if (strncmp("window", atom, 6) == 0) {
+        _dispatch_window(buf, len, index);
+    } else if (strncmp("on_frame", atom, 6) == 0) {
+        _dispatch_on_frame(buf, len, index);
+    } else {
+        fprintf(stderr, "Unknown thing %s\n", atom);
+        assert(1 == 0);
+    }
 }
-
-// Not entirely correctly named, but usually what we want - an {atom, binary} 2-tuple
-void write_response_tuple2(char *atom, char *message) {
-    char buffer[BUF_SIZE];
-    int index = 0;
-
-    ei_encode_tuple_header(buffer, &index, 2);
-    ei_encode_atom(buffer, &index, atom);
-    ei_encode_binary(buffer, &index, message, strlen(message));
-
-    write_response_bytes(buffer, index);
+// {comment, <<comment>>}
+static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
+    char comment[BUF_SIZE];
+    long length;
+    assert(ei_decode_binary(buf, index, comment, &length) == 0);
+    fprintf(stderr, "Got comment [%s]\n", comment);
 }
+// {window, [width, height, <<title>>]}
+static void _dispatch_window(const char *buf, unsigned short len, int *index) {
+    char title[BUF_SIZE];
+    long length, width, height;
+    ei_term term;
 
-void write_response_bytes(char *bytes, unsigned short len) {
-    struct iovec iov[2];
-    unsigned char size_buffer[2];
-
-    size_buffer[0] = len >> 8;
-    size_buffer[1] = len & 0xff;
-
-    iov[0].iov_base = size_buffer;
-    iov[0].iov_len  = 2;
-    iov[1].iov_base = bytes;
-    iov[1].iov_len  = len;
-
-    fprintf(stderr, "Writing response bytes:\n");
-    dump_hex(size_buffer, 2);
-    dump_hex(bytes, len);
-    assert (writev(STDOUT_FILENO, iov, 2) == len + 2);
-    fprintf(stderr, "Wrote response bytes\n");
+    assert(ei_decode_ei_term(buf, index, &term));
+    assert(term.arity == 3);
+    assert(ei_decode_long(buf, index, &width) == 0);
+    assert(ei_decode_long(buf, index, &height) == 0);
+    assert(ei_decode_binary(buf, index, title, &length) == 0);
+    fprintf(stderr, "Got window (%ld, %ld, [%s])\n", width, height, title);
+}
+// {on_frame, pid}
+static void _dispatch_on_frame(const char *buf, unsigned short len, int *index) {
+    erlang_pid pid;
+    assert(ei_decode_pid(buf, index, &pid) == 0);
+    fprintf(stderr, "On frame callback pid <<%d.%d.%d@%s>>\n",
+            pid.num, pid.serial, pid.creation, pid.node);
 }
 
 void errorcb(int error, const char *desc) {
     // TODO proper callback on stdout as well.
     fprintf(stderr, "GLFW error %d: %s\n", error, desc);
-}
-
-// For debugging, shamely stolen from github
-// https://gist.githubusercontent.com/ccbrown/9722406/raw/05202cd8f86159ff09edc879b70b5ac6be5d25d0/DumpHex.c
-
-void dump_hex(const void* data, size_t size) {
-    char ascii[17];
-    size_t i, j;
-    ascii[16] = '\0';
-    for (i = 0; i < size; ++i) {
-        fprintf(stderr,"%02X ", ((unsigned char*)data)[i]);
-        if (((unsigned char*)data)[i] >= ' ' && ((unsigned char*)data)[i] <= '~') {
-            ascii[i % 16] = ((unsigned char*)data)[i];
-        } else {
-            ascii[i % 16] = '.';
-        }
-        if ((i+1) % 8 == 0 || i+1 == size) {
-            fprintf(stderr," ");
-            if ((i+1) % 16 == 0) {
-                fprintf(stderr,"|  %s \n", ascii);
-            } else if (i+1 == size) {
-                ascii[(i+1) % 16] = '\0';
-                if ((i+1) % 16 <= 8) {
-                    fprintf(stderr," ");
-                }
-                for (j = (i+1) % 16; j < 16; ++j) {
-                    fprintf(stderr,"   ");
-                }
-                fprintf(stderr,"|  %s \n", ascii);
-            }
-        }
-    }
-    fflush(stderr);
 }
