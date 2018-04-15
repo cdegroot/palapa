@@ -1,8 +1,16 @@
 defmodule Mix.Tasks.Compile.Native do
+  def make_path do
+    if Mix.Project.umbrella? do
+      "apps/uderzo"
+    else
+      "."
+    end
+  end
   def run(_) do
     case :os.type do
       {_, :linux} ->
-        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "compile"], stderr_to_stdout: true)
+        ## Hack alert
+        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "compile"], stderr_to_stdout: true, cd: make_path())
         IO.binwrite(result)
         0 = error
       _ ->
@@ -16,7 +24,7 @@ defmodule Mix.Tasks.Compile.GenBindings do
   def run(_) do
     case :os.type do
       {_, :linux} ->
-        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "bindings"], stderr_to_stdout: true)
+        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "bindings"], stderr_to_stdout: true, cd: Mix.Tasks.Compile.Native.make_path())
         IO.binwrite(result)
         0 = error
       _ ->

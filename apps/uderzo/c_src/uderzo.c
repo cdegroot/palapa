@@ -167,6 +167,9 @@ static void _dispatch_window(const char *buf, unsigned short len, int *index) {
     fprintf(stderr, "Got window (%ld, %ld, [%s])\n", width, height, title);
 }
 
+// The code below can eventually be completely generated, but for now
+// we just type a bit.
+
 // @ELIXIR@ on_frame frame_pid
 static void _dispatch_on_frame(const char *buf, unsigned short len, int *index) {
     erlang_pid pid;
