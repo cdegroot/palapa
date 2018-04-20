@@ -27,10 +27,12 @@
 //        can batch commands. This is not visible here.
 
 extern void errorcb(int error, const char *desc);
+//extern void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 extern void read_loop();
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
+//erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks
 
 int main() {
     if (!glfwInit()) {
@@ -43,6 +45,8 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+    glfwSwapInterval(0);
 
     fprintf(stderr, "Uderzo graphics executable started up.\n");
 
@@ -122,27 +126,6 @@ static void _handle_command(const char *command, unsigned short len, int *index)
         fprintf(stderr, "Unknown term type %c / %d\n", term.ei_type, term.ei_type);
         assert(1 == 0);
     }
-
-    // However, to get started, just echo:
-    // write_response_bytes(command, len);
-}
-static void _dispatch_comment(const char *buf, unsigned short len, int *index);
-static void _dispatch_window(const char *buf, unsigned short len, int *index);
-static void _dispatch_on_frame(const char *buf, unsigned short len, int *index);
-static void _dispatch_command(const char *buf, unsigned short len, int *index) {
-    char atom[MAXATOMLEN];
-    assert(ei_decode_atom(buf, index, atom) == 0);
-    fprintf(stderr, "Dispatching %s\n", atom);
-    if (strncmp("comment", atom, 7) == 0) {
-        _dispatch_comment(buf, len, index);
-    } else if (strncmp("window", atom, 6) == 0) {
-        _dispatch_window(buf, len, index);
-    } else if (strncmp("on_frame", atom, 6) == 0) {
-        _dispatch_on_frame(buf, len, index);
-    } else {
-        fprintf(stderr, "Unknown thing %s\n", atom);
-        assert(1 == 0);
-    }
 }
 
 // @ELIXIR@ comment comment
@@ -153,19 +136,57 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
     fprintf(stderr, "Got comment [%s]\n", comment);
 }
 
-// @ELIXIR@ window height,width,title
-static void _dispatch_window(const char *buf, unsigned short len, int *index) {
+// @ELIXIR@ make_window height,width,title,response_pid
+static void _dispatch_make_window(const char *buf, unsigned short len, int *index) {
     char title[BUF_SIZE];
+    char response[BUF_SIZE];
+    int response_index = 0;
     long length, width, height;
     ei_term term;
+    erlang_pid pid;
+    GLFWwindow *window;
 
-    //assert(ei_decode_ei_term(buf, index, &term));
-    //assert(term.arity == 3);
+    // decode
     assert(ei_decode_long(buf, index, &width) == 0);
     assert(ei_decode_long(buf, index, &height) == 0);
     assert(ei_decode_binary(buf, index, title, &length) == 0);
+    assert(ei_decode_pid(buf, index, &pid) == 0);
+
     fprintf(stderr, "Got window (%ld, %ld, [%s])\n", width, height, title);
+
+    // execute
+    window = glfwCreateWindow(1000, 600, "NanoVG", NULL, NULL);
+    glfwMakeContextCurrent(window);
+    if (vg == NULL) {
+        // We apparently can only do this when a window has been created.
+        vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+        assert(vg != NULL);
+    }
+
+    // encode response
+    ei_encode_version(response, &response_index);
+    ei_encode_tuple_header(response, &response_index, 2);
+    ei_encode_pid(response, &response_index, &pid);
+    ei_encode_tuple_header(response, &response_index, 2);
+    if (window) {
+        ei_encode_atom(response, &response_index, "ok");
+        ei_encode_longlong(response, &response_index, (long long) window);
+    } else {
+        ei_encode_atom(response, &response_index, "error");
+#define CANNOT_CREATE_WINDOW "Could not create window"
+        ei_encode_binary(response, &response_index, CANNOT_CREATE_WINDOW, strlen(CANNOT_CREATE_WINDOW));
+    }
+    write_response_bytes(response, response_index);
 }
+
+// @ELIXIR@ destroy_window window_handle
+static void _dispatch_destroy_window(const char *buf, unsigned short len, int *index) {
+    GLFWwindow *window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
+
+    glfwDestroyWindow(window);
+}
+
 
 // The code below can eventually be completely generated, but for now
 // we just type a bit.
@@ -176,6 +197,24 @@ static void _dispatch_on_frame(const char *buf, unsigned short len, int *index) 
     assert(ei_decode_pid(buf, index, &pid) == 0);
     fprintf(stderr, "On frame callback pid <<%d.%d.%d@%s>>\n",
             pid.num, pid.serial, pid.creation, pid.node);
+}
+
+static void _dispatch_command(const char *buf, unsigned short len, int *index) {
+    char atom[MAXATOMLEN];
+    assert(ei_decode_atom(buf, index, atom) == 0);
+    fprintf(stderr, "Dispatching %s\n", atom);
+    if (strncmp("comment", atom, 7) == 0) {
+        _dispatch_comment(buf, len, index);
+    } else if (strncmp("make_window", atom, 6) == 0) {
+        _dispatch_make_window(buf, len, index);
+    } else if (strncmp("destroy_window", atom, 6) == 0) {
+        _dispatch_destroy_window(buf, len, index);
+    } else if (strncmp("on_frame", atom, 6) == 0) {
+        _dispatch_on_frame(buf, len, index);
+    } else {
+        fprintf(stderr, "Unknown thing %s\n", atom);
+        assert(1 == 0);
+    }
 }
 
 void errorcb(int error, const char *desc) {

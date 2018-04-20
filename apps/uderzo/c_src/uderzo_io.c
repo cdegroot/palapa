@@ -9,6 +9,7 @@ void write_single_atom(const char *atom) {
     char buffer[MAXATOMLEN];
     int index = 0;
 
+    ei_encode_version(buffer, &index);
     ei_encode_atom(buffer, &index, atom);
 
     write_response_bytes(buffer, index);
@@ -19,6 +20,7 @@ void write_response_tuple2(const char *atom, const char *message) {
     char buffer[BUF_SIZE];
     int index = 0;
 
+    ei_encode_version(buffer, &index);
     ei_encode_tuple_header(buffer, &index, 2);
     ei_encode_atom(buffer, &index, atom);
     ei_encode_binary(buffer, &index, message, strlen(message));

@@ -53,8 +53,15 @@ defmodule Uderzo.GraphicsServer do
 
   def handle_info({_port, {:data, data}}, state) do
     stuff = :erlang.binary_to_term(data)
-    Logger.info("  ignore data #{inspect stuff}")
+    dispatch_message(stuff)
     {:noreply, state}
+  end
+
+  defp dispatch_message({pid, response}) when is_pid(pid) do
+    send(pid, response)
+  end
+  defp dispatch_message(stuff) do
+    Logger.info("  ignore data #{inspect stuff}")
   end
 
   def handle_info(msg, state) do

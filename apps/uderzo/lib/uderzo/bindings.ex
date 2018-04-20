@@ -3,8 +3,10 @@ defmodule Uderzo.Bindings do
   alias Uderzo.GraphicsServer
   def comment(comment), do: comment(GraphicsServer, comment)
   def comment(pid,comment), do: GraphicsServer.send_commands(pid, [{:comment, comment}])
-  def window(height,width,title), do: window(GraphicsServer, height,width,title)
-  def window(pid,height,width,title), do: GraphicsServer.send_commands(pid, [{:window, height,width,title}])
+  def make_window(height,width,title,response_pid), do: make_window(GraphicsServer, height,width,title,response_pid)
+  def make_window(pid,height,width,title,response_pid), do: GraphicsServer.send_commands(pid, [{:make_window, height,width,title,response_pid}])
+  def destroy_window(window_handle), do: destroy_window(GraphicsServer, window_handle)
+  def destroy_window(pid,window_handle), do: GraphicsServer.send_commands(pid, [{:destroy_window, window_handle}])
   def on_frame(frame_pid), do: on_frame(GraphicsServer, frame_pid)
   def on_frame(pid,frame_pid), do: GraphicsServer.send_commands(pid, [{:on_frame, frame_pid}])
 end
