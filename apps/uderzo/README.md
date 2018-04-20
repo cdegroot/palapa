@@ -35,8 +35,99 @@ make that hard. Nanovg is portable, and our wrapper executable should be minimal
 
 # Protocol
 
-The pipe protocol has two modes: ASCII and binary. In either case, most of the code is generated. The
-ASCII mode is handy for debugging, but binary should be the default. 
-
 To get started, we KISS and just use erlang term format. Later on we can have some hand-optimized
 RPC going on.
+
+Messages are fully async, so if you want a response, you need to send a pid to receive the
+response along. By convention, we send that pid as the last argument on a call and 
+return responses as `{pid, response}` - the graphics genserver then simply dispatches
+that with `send(pid, response)` and we're in Elixir-land from there. 
+
+We use the direct names of the GLFW/OpenGL/NanoVG libraries, uncamelcased. Pointers to 
+hold return values are converted to return tuples. E.g. 
+
+```c
+  double mx, my;
+  GLFWwindow *window;
+
+  glfwGetCursorPos(window, &mx, &my);
+```
+
+becomes
+
+```elixir
+  glfw_get_cursor_pos(window, self())
+  receive do
+    {mx, my} -> ....
+  end
+```
+
+There is ample room for crashing the graphics server - pointers to windows, etcetera, are
+directly returned as 64 bit numbers. As long as you just store and send them back as
+opaque handles, everything is fine. If you don't, you will have spectacular crashes. 
+
+TBD: Keyboard, mouse callbacks. 
+
+# Clixir
+
+We write the C code in Elixir and use macros to generate both the Elixir bindings
+and the C code. This idea was blatantly stolen from Squeak Smalltalk. As we aim
+for a very low level interface, all the functions will have the same structure in 
+C: unmarshall arguments, make call, marshall return values; so "Clixir" can start
+out simple.
+
+```elixir
+
+  defgfx glfw_get_cursor_pos(window, pid) do
+    cdecl "GLFWwindow *": window
+    cdecl erlang_pid: pid
+    cdecl double: {mx, my}
+    glfwGetCursorPos(window, &mx, &my)
+    {pid, {mx, my}}
+  end
+```
+
+will result in this Elixir code (both a regular and a blocking synchronous version
+are generated, although I think the sync version shouldn't be used ;-)):
+
+```elixir
+  @spec glfw_get_cursor_pos(integer, pid) :: none
+  def glfw_get_cursor_pos(window, pid) do
+    GraphicsServer.send_command(GraphicsServer, {:glfw_get_cursor_pos, window, pid})
+  end
+
+  @spec s_glfw_get_cursor_pos(integer) :: {float, float}
+  def glfw_get_cursor_pos(window) do
+    glfw_get_cursor_pos(window, self)
+    receive do
+      {mx, my} when is_float(mx) and is_float(my) -> {mx, my}
+    end
+  end
+```
+
+and the following C code:
+
+```c
+static void _dispatch_glfw_get_cursor_pos(const char *buf, unsigned short len, int *index) {
+  
+  GLFWwindow *window;
+  erlang_pid pid;
+  double mx, my;
+
+  assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
+  assert(ei_decode_pid(buf, index, &pid) == 0);
+  
+  glfwGetCursorPos(window, &mx, My);
+
+  ei_encode_version(response, &response_index);
+  ei_encode_tuple_header(response, &response_index, 2);
+  ei_encode_pid(response, &response_index, &pid);
+  ei_encode_tuple_header(response, &response_index, 2);
+  ei_encode_double(response, &response_index, mx);
+  ei_encode_double(response, &response_index, my);
+
+  write_response_bytes(response, response_index);
+}
+```
+
+The idea is to write a Clixir wrapper for every NanoVG/GLFW/OpenGL function under the sun.
