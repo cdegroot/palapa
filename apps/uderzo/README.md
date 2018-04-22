@@ -96,7 +96,7 @@ are generated, although I think the sync version shouldn't be used ;-)):
     GraphicsServer.send_command(GraphicsServer, {:glfw_get_cursor_pos, window, pid})
   end
 
-  @spec s_glfw_get_cursor_pos(integer) :: {float, float}
+  @spec glfw_get_cursor_pos_s(integer) :: {float, float}
   def glfw_get_cursor_pos(window) do
     glfw_get_cursor_pos(window, self)
     receive do
@@ -131,3 +131,18 @@ static void _dispatch_glfw_get_cursor_pos(const char *buf, unsigned short len, i
 ```
 
 The idea is to write a Clixir wrapper for every NanoVG/GLFW/OpenGL function under the sun.
+
+Readme-driven development means that most of this is a lie. To do:
+
+* [x] Basic C code generation
+* [x] Basic Elixir code generation
+* [ ] Emit C code in a separate source file in c_src
+* [ ] Generate a jump table using GNU gperf
+* [ ] Tie all C bits together
+* [ ] Have a method for "special" functions (see e.g. makewindow)?
+* [ ] Implement all NanoVG methods
+* [ ] Keyboard, mouse callbacks and code generation for that?
+* [ ] Inter-process comms, have processes subscribe to GraphicsServer so they can
+      act on crashes
+* [ ] Demo time ;-)
+* [ ] (optional) Emit sync methods?
