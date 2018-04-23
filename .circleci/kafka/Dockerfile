@@ -29,7 +29,10 @@ ADD supervisor/kafka.conf supervisor/zookeeper.conf supervisor/create-topics.con
 # Tweak kafka config. It's generally useful for test environments to have auto create
 # topics on; also, two partitions will exercise for the in-production-many-partitions case
 # better
+# Note: the extra echo ensures the original config file has an ending newline. This is
+# more portable than stuff like "echo -e '\n....'"
 RUN sed -i.bak 's/num.partitions=1/num.partitions=2/' $KAFKA_HOME/config/server.properties && \
+    echo >>$KAFKA_HOME/config/server.properties && \
     echo 'auto.create.topics.enable=true' >>$KAFKA_HOME/config/server.properties
 
 # 2181 is zookeeper, 9092 is kafka
