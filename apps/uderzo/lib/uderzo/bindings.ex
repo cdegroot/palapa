@@ -1,4 +1,10 @@
 defmodule Uderzo.Bindings do
+  @moduledoc """
+  Uderzo Elixir->C bindings in Clixir. Note that for demo purposes, 
+  this is a hodgepodge of various modules - NanoVG, GLFW, utility
+  methods, demo methods; there's nothing however that precludes
+  a clean separation.
+  """
   use Uderzo.Clixir
 
   @clixir_target "c_src/uderzo"
@@ -16,11 +22,16 @@ defmodule Uderzo.Bindings do
     cdecl erlang_pid: pid
     cdecl "GLFWwindow *": window
     window = glfwCreateWindow(width, height, title, NULL, NULL)
+
+    # There is certain stuff that only can be done when we have a GLFW window. 
+    # Do that now. 
+
     glfwMakeContextCurrent(window)
     glfwSwapInterval(0)
     if vg == NULL do
       vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG)
       assert(vg != NULL)
+      loadDemoData(vg, &data) # TODO hardcoding demo data in a library... bad.
     end
     if window != NULL do
       {pid, {:glfw_create_window_result, window}}
@@ -79,6 +90,15 @@ defmodule Uderzo.Bindings do
     glfwPollEvents()
 
     {pid, :uderzo_end_frame_done}
+  end
+
+  # Demo code. These are some very high level calls basically just to get
+  # some eyecandy going. Ideally, all the NanoVG primitives would be mapped.
+
+  defgfx demo_render(mx, my, width, height, t) do
+    cdecl double: [mx, my, width, height, t]
+
+    renderDemo(vg, mx, my, width, height, t, 0, &data)
   end
 end
 

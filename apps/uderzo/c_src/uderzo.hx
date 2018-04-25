@@ -19,6 +19,7 @@
 #include <nanovg_gl_utils.h>
 
 #include "clixir_support.h"
+#include "nanovg_demo.h"
 
 // Comment-driven development.
 // [x] 1. Library initialization is done at program startup time.
@@ -42,6 +43,7 @@ extern void read_loop();
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
+DemoData data;
 //erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks?
 
 int main() {

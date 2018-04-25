@@ -19,6 +19,7 @@
 #include <nanovg_gl_utils.h>
 
 #include "clixir_support.h"
+#include "nanovg_demo.h"
 
 // Comment-driven development.
 // [x] 1. Library initialization is done at program startup time.
@@ -42,6 +43,7 @@ extern void read_loop();
 
 // These pesky global things, for now.
 NVGcontext* vg = NULL;
+DemoData data;
 //erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks?
 
 int main() {
@@ -73,6 +75,21 @@ void errorcb(int error, const char *desc) {
 
 // END OF HEADER
 
+
+// Generated code for demo_render do not edit!
+static void _dispatch_demo_render(const char *buf, unsigned short len, int *index) {
+    double height;
+    double mx;
+    double my;
+    double t;
+    double width;
+    assert(ei_decode_double(buf, index, &mx) == 0);
+    assert(ei_decode_double(buf, index, &my) == 0);
+    assert(ei_decode_double(buf, index, &width) == 0);
+    assert(ei_decode_double(buf, index, &height) == 0);
+    assert(ei_decode_double(buf, index, &t) == 0);
+    renderDemo(vg, mx, my, width, height, t, 0, &data);
+}
 
 // Generated code for uderzo_end_frame do not edit!
 static void _dispatch_uderzo_end_frame(const char *buf, unsigned short len, int *index) {
@@ -159,6 +176,7 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
     if (vg == NULL) {
         vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
         assert(vg != NULL);
+        loadDemoData(vg, &data);
     }
     if (window != NULL) {
         char response[BUF_SIZE];
@@ -192,7 +210,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 }
 
 /* ANSI-C code produced by gperf version 3.1 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303422783.gperf  */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303423487.gperf  */
 /* Computed positions: -k'1' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -222,13 +240,13 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
 };
 
-#define TOTAL_KEYWORDS 5
+#define TOTAL_KEYWORDS 6
 #define MIN_WORD_LENGTH 7
 #define MAX_WORD_LENGTH 19
 #define MIN_HASH_VALUE 7
@@ -257,7 +275,7 @@ hash (register const char *str, register size_t len)
       25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
       25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
       25, 25, 25, 25, 25, 25, 25, 25, 25,  0,
-      25, 25, 25,  5, 25, 25, 25, 25, 25, 25,
+       0, 25, 25,  5, 25, 25, 25, 25, 25, 25,
       25, 25, 25, 25, 25, 25, 25,  0, 25, 25,
       25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
       25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
@@ -283,18 +301,21 @@ in_word_set (register const char *str, register size_t len)
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+#line 11 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
       {"comment", _dispatch_comment},
-      {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+      {""}, {""}, {""},
+#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
+      {"demo_render", _dispatch_demo_render},
+      {""}, {""}, {""}, {""},
+#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
       {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
       {"uderzo_start_frame", _dispatch_uderzo_start_frame},
       {""}, {""}, {""}, {""},
-#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303423487.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 
