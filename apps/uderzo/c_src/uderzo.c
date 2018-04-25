@@ -1,4 +1,4 @@
-
+// -*- mode: c; -*-
 #define GLFW_INCLUDE_ES3
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
@@ -153,7 +153,6 @@ static void _dispatch_command(const char *buf, unsigned short len, int *index) {
         assert(1 == 0);
     }
 }
-
 // Generated code for glfw_destroy_window do not edit!
 static void _dispatch_glfw_destroy_window(const char *buf, unsigned short len, int *index) {
     GLFWWindow * window;
@@ -210,5 +209,81 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
     assert(ei_decode_longlong(buf, index, &comment) == 0);
     fprintf(stderr, "Got comment [%s]
 ", comment);
+}
+
+/* ANSI-C code produced by gperf version 3.1 */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303422335.gperf  */
+/* Computed positions: -k'' */
+
+#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303422335.gperf"
+struct dispatch_entry {
+  char *name;
+  void (*dispatch_func)(const char *buf, unsigned short len, int *index);
+};
+
+#define TOTAL_KEYWORDS 3
+#define MIN_WORD_LENGTH 7
+#define MAX_WORD_LENGTH 19
+#define MIN_HASH_VALUE 7
+#define MAX_HASH_VALUE 19
+/* maximum key range = 13, duplicates = 0 */
+
+#ifdef __GNUC__
+__inline
+#else
+#ifdef __cplusplus
+inline
+#endif
+#endif
+/*ARGSUSED*/
+static unsigned int
+hash (register const char *str, register size_t len)
+{
+  return len;
+}
+
+struct dispatch_entry *
+in_word_set (register const char *str, register size_t len)
+{
+  static struct dispatch_entry wordlist[] =
+    {
+      {""}, {""}, {""}, {""}, {""}, {""}, {""},
+#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303422335.gperf"
+      {"comment", comment},
+      {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+      {""},
+#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303422335.gperf"
+      {"glfw_create_window", glfw_create_window},
+#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303422335.gperf"
+      {"glfw_destroy_window", glfw_destroy_window}
+    };
+
+  if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
+    {
+      register unsigned int key = hash (str, len);
+
+      if (key <= MAX_HASH_VALUE)
+        {
+          register const char *s = wordlist[key].name;
+
+          if (*str == *s && !strcmp (str + 1, s + 1))
+            return &wordlist[key];
+        }
+    }
+  return 0;
+}
+
+static void _dispatch_command(const char *buf, unsigned short len, int *index) {
+    char atom[MAXATOMLEN];
+    struct dispatch_entry *dpe;
+    assert(ei_decode_atom(buf, index, atom) == 0);
+
+    dpe = in_word_set(atom, strlen(atom));
+    if (dpe != null) {
+         (dpe->dispatch_func)(buf, len, index);
+    } else {
+        fprintf(stderr, "Dispatch function not found for [%s]
+", atom);
+    }
 }
 

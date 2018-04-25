@@ -1,4 +1,4 @@
-
+// -*- mode: c; -*-
 #define GLFW_INCLUDE_ES3
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
@@ -153,4 +153,3 @@ static void _dispatch_command(const char *buf, unsigned short len, int *index) {
         assert(1 == 0);
     }
 }
-

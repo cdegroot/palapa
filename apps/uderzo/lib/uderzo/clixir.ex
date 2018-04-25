@@ -19,6 +19,7 @@ defmodule Uderzo.Clixir do
     {_block, _, exprs} = expression
     c_code = make_c(function_name, parameter_list, exprs)
     e_code = make_e(function_name, parameter_list, exprs)
+    IO.puts ("E code: #{inspect e_code}")
     quote do
       @cfuns {unquote(function_name), unquote(c_code)}
       unquote(e_code)
@@ -27,7 +28,7 @@ defmodule Uderzo.Clixir do
 
   # TODO only do this when needed (compare timestamps,etc)
   defmacro __before_compile__(env) do
-    IO.puts("BEFORE COMPILE")
+    tmpfile = fn -> "/tmp/clixir-temp-#{node()}-#{:erlang.unique_integer}" end
     target = Module.get_attribute(env.module, :clixir_target)
     if is_nil(target) do
       raise "Please set the @clixir_target attribute on #{env.module}."
@@ -43,8 +44,36 @@ defmodule Uderzo.Clixir do
     end)
     # TODO:
     # Dump data for gperf
-    # Call gperf
+    gperf_file = tmpfile.() <> ".gperf"
+    {:ok, gperf_data} = File.open(gperf_file, [:write])
+    IO.write gperf_data, """
+    struct dispatch_entry {
+      char *name;
+      void (*dispatch_func)(const char *buf, unsigned short len, int *index);
+    };
+    %%
+    """
+    Enum.map(cfuns, fn {fun, _} -> IO.puts gperf_data, "#{fun}, #{fun}" end)
+    File.close(gperf_data)
+    # Call gperf and append to generated code
+    {result, 0} = System.cmd("gperf", ["-t", gperf_file])
+    IO.puts(target_file, result)
+    File.rm(gperf_file)
     # Emit dispatch function
+    IO.puts target_file, """
+    static void _dispatch_command(const char *buf, unsigned short len, int *index) {
+        char atom[MAXATOMLEN];
+        struct dispatch_entry *dpe;
+        assert(ei_decode_atom(buf, index, atom) == 0);
+
+        dpe = in_word_set(atom, strlen(atom));
+        if (dpe != null) {
+             (dpe->dispatch_func)(buf, len, index);
+        } else {
+            fprintf(stderr, "Dispatch function not found for [%s]\n", atom);
+        }
+    }
+    """
     File.close(target_file)
   end
 
@@ -155,7 +184,7 @@ defmodule Uderzo.Clixir do
       {:&, _, [{name, _, nil}]} -> "&" <> to_string(name)
       {:__aliases__, _, [name]} -> to_string(name)
       {oper, _, [lhs, rhs]} -> "#{to_c_var(lhs)} #{to_string(oper)} #{to_c_var(rhs)}"
-      constant_string when is_binary(constant_string) -> "\"#{constant_string}\""
+      constant_string when is_binary(constant_string) -> "\"#{constant_string}\""  # TODO embedded newlines get expanded
       other_pattern -> raise "unknown C AST form #{inspect other_pattern}, please fix macro"
     end
   end
@@ -186,6 +215,7 @@ defmodule Uderzo.Clixir do
       type = cdecls[retval]
       case {retval, type} do
         {{:atom, atom}, nil} ->
+          # TODO for some reason, literal strings land here as well.
           IO.puts(iobuf, "#{indent}ei_encode_atom(response, &resonse_index, \"#{to_string atom}\");")
         {name, :double} ->
           IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")
