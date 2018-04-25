@@ -22,7 +22,7 @@ $(LIBNANOVG):
 C_DEPS := $(wildcard c_src/*.c c_src/*.cx c_src/*.h c_src/*.hx)
 
 uderzo: $(C_DEPS) $(LIBNANOVG)
-	$(CC) $(CFLAGS) \
+	LANG=C $(CC) $(CFLAGS) \
     -I$(NANOVG_SRC)/src -I$(ERLANG_PATH)/include \
     -o uderzo c_src/*.c \
     -L$(ERLANG_PATH)/lib -lerl_interface -lei \

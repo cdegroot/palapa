@@ -60,7 +60,7 @@ defmodule Uderzo.Clixir do
     File.rm(gperf_file)
     # Emit dispatch function
     IO.puts target_file, """
-    static void _dispatch_command(const char *buf, unsigned short len, int *index) {
+    void _dispatch_command(const char *buf, unsigned short len, int *index) {
         char atom[MAXATOMLEN];
         struct dispatch_entry *dpe;
         assert(ei_decode_atom(buf, index, atom) == 0);
