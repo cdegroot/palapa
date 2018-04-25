@@ -76,46 +76,96 @@ defmodule Uderzo.Clixir do
     end)
     |> Enum.map(&(IO.puts(iobuf, &1)))
   end
-  defp emit_c_body(iobuf, cdecls, exprs) do
-    exprs
-    |> Enum.map(fn
+  # Ok, the following couple of functions are currently horribly named. Also, this
+  # is not really clean - got incrementally built when working on Clixir's spec and
+  # first implementation.
+  # What really needs to happen is: TODO:
+  # a) transform Elixir AST in C AST
+  # b) emit C code for C AST
+  @indent "    "
+  defp emit_c_body(iobuf, cdecls, exprs, indent \\ @indent)
+  defp emit_c_body(iobuf, cdecls, {:__block__, _, exprs}, indent) do
+    emit_c_body(iobuf, cdecls, exprs, indent)
+  end
+  defp emit_c_body(iobuf, cdecls, exprs, indent) when is_list(exprs) do
+    Enum.map(exprs, &(emit_c_body(iobuf, cdecls, &1, indent)))
+  end
+  defp emit_c_body(iobuf, cdecls, expr, indent) do
+    case expr do
+      {:=, _, [{left, _, _}, right]} ->
+        # Assignment
+        IO.write(iobuf, "#{indent}#{left} = ")
+        emit_c_body(iobuf, cdecls, [right], "")
+      {:if, _, if_stmt} ->
+        emit_c_if(iobuf, cdecls, if_stmt, indent)
       {funcall, _, args} ->
+        # Function call
         cargs = args
-        |> Enum.map(fn
-          {name, _, nil} -> to_string(name)
-          {:&, _, [{name, _, nil}]} -> "&" <> to_string(name)
-          other_pattern -> "unknown funcall argument pattern #{inspect other_pattern}, please fix macro"
-        end)
+        |> Enum.map(&to_c_var/1)
         |> Enum.join(", ")
-        IO.puts(iobuf, "    #{funcall}(#{cargs});")
-      # This is probably more hardcoded than we need. Better safe than sorry
-      # We _always_ return {pid, {return_typle}}
+        IO.puts(iobuf, "#{indent}#{funcall}(#{cargs});")
+      # Return tuple. This is probably more hardcoded than we need. Better safe than sorry
+      # We _always_ return {pid, {return_tuple}}
       {{:pid, _, _}, return_values} ->
         retvals = return_values
         |> Tuple.to_list
-        |> Enum.map(fn({name, _, _}) -> name end)
-        emit_marshal_return_values(iobuf, retvals, cdecls)
+        |> Enum.map(fn
+          {name, _, _} -> name
+          atom         -> {:atom, atom}
+        end)
+        emit_marshal_return_values(iobuf, retvals, cdecls, indent)
       expr -> raise "unknown expr #{inspect expr}, please fix macro or defgfx declaration"
-    end)
+    end
   end
-  defp emit_marshal_return_values(iobuf, retvals, cdecls) do
+  def to_c_var(expr) do
+    case expr do
+      {name, _, nil} -> to_string(name)
+      {name, _, context} when is_atom(context) -> to_string(name)
+      {:&, _, [{name, _, nil}]} -> "&" <> to_string(name)
+      {:__aliases__, _, [name]} -> to_string(name)
+      {oper, _, [lhs, rhs]} -> "#{to_c_var(lhs)} #{to_string(oper)} #{to_c_var(rhs)}"
+      other_pattern -> raise "unknown C AST form #{inspect other_pattern}, please fix macro"
+    end
+  end
+  # For now, only single-operator if statements are handled.
+  defp emit_c_if(iobuf, cdecls, [conditional, [do: if_true_exprs]], indent) do
+    IO.puts(iobuf, "#{indent}if (#{to_c_var(conditional)}) {")
+    emit_c_body(iobuf, cdecls, if_true_exprs, indent <> @indent)
+    IO.puts(iobuf, "#{indent}}")
+  end
+  defp emit_c_if(iobuf, cdecls, [conditional, [do: if_true_exprs, else: if_false_exprs]], indent) do
+    IO.puts(iobuf, "#{indent}if (#{to_c_var(conditional)}) {")
+    emit_c_body(iobuf, cdecls, if_true_exprs, indent <> @indent)
+    IO.puts(iobuf, "#{indent}} else {")
+    emit_c_body(iobuf, cdecls, if_false_exprs, indent <> @indent)
+    IO.puts(iobuf, "#{indent}}")
+  end
+  defp emit_marshal_return_values(iobuf, retvals, cdecls, indent) do
     IO.puts(iobuf, """
-    char response[BUF_SIZE];
-    int response_index = 0;
-    ei_encode_version(response, &response_index);
-    ei_encode_tuple_header(response, &response_index, 2);
-    ei_encode_pid(response, &response_index, &pid);
-    ei_encode_tuple_header(response, &response_index, #{length(retvals)});
-""")
+      #{indent}char response[BUF_SIZE];
+      #{indent}int response_index = 0;
+      #{indent}ei_encode_version(response, &response_index);
+      #{indent}ei_encode_tuple_header(response, &response_index, 2);
+      #{indent}ei_encode_pid(response, &response_index, &pid);
+      #{indent}ei_encode_tuple_header(response, &response_index, #{length(retvals)});
+      """)
     retvals
     |> Enum.map(fn(retval) ->
       type = cdecls[retval]
       case {retval, type} do
-        {name, :double} -> IO.puts(iobuf, "    ei_encode_double(response, &response_index, #{name});")
-        {r, t} -> raise("unknown type in return #{inspect r}: #{inspect t}, please fix macro")
+        {{:atom, atom}, nil} ->
+          IO.puts(iobuf, "#{indent}ei_encode_atom(response, &resonse_index, #{to_string atom});")
+        {name, :double} ->
+          IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")
+        {name, type} ->
+          if String.ends_with?(to_string(type), "*") do
+            IO.puts(iobuf, "#{indent}ei_encode_longlong(response, &response_index, (long long) #{name});")
+          else
+            raise("unknown type in return #{inspect name}: #{inspect type}, please fix macro")
+          end
       end
     end)
-    IO.puts(iobuf, "    write_response_bytes(response, response_index);")
+    IO.puts(iobuf, "#{indent}write_response_bytes(response, response_index);")
   end
   defp end_c_fun(iobuf) do
     IO.puts(iobuf, "}")
@@ -123,7 +173,7 @@ defmodule Uderzo.Clixir do
 
   # Elixir code stuff starts here
 
-  def make_e(function_name, parameter_list, exprs) do
+  def make_e(function_name, parameter_list, _exprs) do
     quote do
       def unquote(function_name)(unquote_splicing(parameter_list)) do
         GraphicsServer.send_command(GraphicsServer, {unquote(function_name), unquote_splicing(parameter_list)})
