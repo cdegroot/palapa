@@ -18,11 +18,10 @@ defmodule Uderzo.GraphicsServer do
   end
 
   @doc """
-  Send a series of commands. We prefer an array so we can stuff it in one
-  write.
+  Send a command.
   """
-  def send_commands(pid, commands) do
-    :ok = GenServer.cast(pid, {:send, commands})
+  def send_command(pid, command) do
+    :ok = GenServer.cast(pid, {:send, command})
   end
 
   ## Callbacks
@@ -34,8 +33,8 @@ defmodule Uderzo.GraphicsServer do
     {:ok, %State{port: port}}
   end
 
-  def handle_cast({:send, commands}, state) do
-    bytes = :erlang.term_to_binary(commands)
+  def handle_cast({:send, command}, state) do
+    bytes = :erlang.term_to_binary(command)
     Port.command(state.port, bytes)
     {:noreply, state}
   end
@@ -63,6 +62,7 @@ defmodule Uderzo.GraphicsServer do
   end
 
   defp dispatch_message({pid, response}) when is_pid(pid) do
+    Logger.info("  sending callback #{inspect response} to #{inspect pid}")
     send(pid, response)
   end
 

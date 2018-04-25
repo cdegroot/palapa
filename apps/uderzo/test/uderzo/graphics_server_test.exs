@@ -6,13 +6,13 @@ defmodule Uderzo.GraphicsServerTest do
 
   test "Bindings work" do
     Bindings.comment("Comment")
-    Bindings.make_window(640, 480, "Another demo window", self())
+    Bindings.glfw_create_window(640, 480, "Another demo window", self())
     receive do
       {:ok, window} ->
         IO.puts("Window created, handle is #{inspect window}")
         IO.puts("Sleeping a bit...")
         Process.sleep(1_000)
-        Bindings.destroy_window(window)
+        Bindings.glfw_destroy_window(window)
       msg ->
         IO.puts("Received message #{inspect msg}")
     end

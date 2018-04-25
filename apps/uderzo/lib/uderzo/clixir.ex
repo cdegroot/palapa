@@ -18,8 +18,7 @@ defmodule Uderzo.Clixir do
     parameter_list = Enum.map(parameter_ast, fn({p, _, _}) -> p end)
     {_block, _, exprs} = expression
     c_code = make_c(function_name, parameter_list, exprs)
-    e_code = make_e(function_name, parameter_list, exprs)
-    IO.puts ("E code: #{inspect e_code}")
+    e_code = make_e(function_name, parameter_ast, exprs)
     quote do
       @cfuns {unquote(function_name), unquote(c_code)}
       unquote(e_code)
@@ -36,7 +35,7 @@ defmodule Uderzo.Clixir do
     {:ok, header} = File.read(target <> ".hx")
     {:ok, target_file} = File.open(target <> ".c", [:write])
     IO.write(target_file, header)
-    IO.puts("// END OF HEADER")
+    IO.puts(target_file, "\n\n// END OF HEADER\n\n")
     cfuns = Module.get_attribute(env.module, :cfuns)
     Enum.map(cfuns, fn {_fun, {hdr, body}} ->
       IO.puts(target_file, hdr)
@@ -53,7 +52,7 @@ defmodule Uderzo.Clixir do
     };
     %%
     """
-    Enum.map(cfuns, fn {fun, _} -> IO.puts gperf_data, "#{fun}, #{fun}" end)
+    Enum.map(cfuns, fn {fun, _} -> IO.puts gperf_data, "#{fun}, _dispatch_#{fun}" end)
     File.close(gperf_data)
     # Call gperf and append to generated code
     {result, 0} = System.cmd("gperf", ["-t", gperf_file])
@@ -67,10 +66,10 @@ defmodule Uderzo.Clixir do
         assert(ei_decode_atom(buf, index, atom) == 0);
 
         dpe = in_word_set(atom, strlen(atom));
-        if (dpe != null) {
+        if (dpe != NULL) {
              (dpe->dispatch_func)(buf, len, index);
         } else {
-            fprintf(stderr, "Dispatch function not found for [%s]\n", atom);
+            fprintf(stderr, "Dispatch function not found for [%s]\\\n", atom);
         }
     }
     """
@@ -90,6 +89,7 @@ defmodule Uderzo.Clixir do
     end_c_fun(iobuf)
     StringIO.contents(iobuf)
   end
+
   defp cdecls(exprs) do
     # Return c declarations as %{name -> type} map
     exprs
@@ -113,8 +113,8 @@ defmodule Uderzo.Clixir do
   defp emit_c_local_vars(iobuf, cdecls) do
     cdecls
     |> Enum.map(fn
-      ({decl, "char *"}) -> IO.puts(iobuf, "    char #{decl}[BUF_SIZE];")
-                            IO.puts(iobuf, "    long #{decl};")
+      ({decl, :"char *"}) -> IO.puts(iobuf, "    char #{decl}[BUF_SIZE];")
+                            IO.puts(iobuf, "    long #{decl}_len;")
       ({decl, type}) ->     IO.puts(iobuf, "    #{to_string type} #{decl};")
     end)
   end
@@ -125,11 +125,11 @@ defmodule Uderzo.Clixir do
       # Fairly manual list, we can clean this up later when we have a better overview of regularities
       {name, :double} ->     "    assert(ei_decode_double(buf, index, &#{name}) == 0);"
       {name, :long} ->       "    assert(ei_decode_long(buf, index, &#{name}) == 0);"
-      {name, "char *"} ->    "    assert(ei_decode_binary(buf, index, #{name}, #{name}_len) == 0);"
+      {name, :"char *"} ->    "    assert(ei_decode_binary(buf, index, #{name}, &#{name}_len) == 0);"
       {name, :erlang_pid} -> "    assert(ei_decode_pid(buf, index, &#{name}) == 0);"
       {name, type} ->
         if String.ends_with?(to_string(type), "*") do
-                             "    assert(ei_decode_longlong(buf, index, &#{name}) == 0);"
+                             "    assert(ei_decode_longlong(buf, index, (long long *) &#{name}) == 0);"
         else
           raise "unknown type #{type} for variable #{name}, please fix macro"
         end
@@ -183,6 +183,7 @@ defmodule Uderzo.Clixir do
       {name, _, context} when is_atom(context) -> "#{to_string(name)}"
       {:&, _, [{name, _, nil}]} -> "&" <> to_string(name)
       {:__aliases__, _, [name]} -> to_string(name)
+      number when is_integer(number) or is_float(number) -> to_string(number)
       {oper, _, [lhs, rhs]} -> "#{to_c_var(lhs)} #{to_string(oper)} #{to_c_var(rhs)}"
       constant_string when is_binary(constant_string) -> "\"#{constant_string}\""  # TODO embedded newlines get expanded
       other_pattern -> raise "unknown C AST form #{inspect other_pattern}, please fix macro"
@@ -216,7 +217,7 @@ defmodule Uderzo.Clixir do
       case {retval, type} do
         {{:atom, atom}, nil} ->
           # TODO for some reason, literal strings land here as well.
-          IO.puts(iobuf, "#{indent}ei_encode_atom(response, &resonse_index, \"#{to_string atom}\");")
+          IO.puts(iobuf, "#{indent}ei_encode_atom(response, &response_index, \"#{to_string atom}\");")
         {name, :double} ->
           IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")
         {name, type} ->

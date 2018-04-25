@@ -5,16 +5,17 @@ defmodule Uderzo.Bindings do
 
   defgfx comment(comment) do
     cdecl "char *": comment
-    fprintf(stderr, "Got comment [%s]\n", comment)
+    fprintf(stderr, "Got comment [%s]", comment)
   end
 
   defgfx glfw_create_window(width, height, title, pid) do
     cdecl "char *": title
     cdecl long: [length, width, height]
     cdecl erlang_pid: pid
-    cdecl "GLFWWindow *": window
+    cdecl "GLFWwindow *": window
     window = glfwCreateWindow(width, height, title, NULL, NULL)
     glfwMakeContextCurrent(window)
+    glfwSwapInterval(0)
     if vg == NULL do
       vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG)
       assert(vg != NULL)
@@ -28,7 +29,9 @@ defmodule Uderzo.Bindings do
   end
 
   defgfx glfw_destroy_window(window) do
-    cdecl "GLFWWindow *": window
+    cdecl "GLFWwindow *": window
     glfwDestroyWindow(window)
   end
 end
+
+#  LocalWords:  GLFWwindow
