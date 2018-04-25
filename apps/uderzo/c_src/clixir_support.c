@@ -5,9 +5,7 @@
  */
 #include "clixir_support.h"
 
-
 static void handle_command(const char *command, unsigned short len);
-
 
 void clixir_read_loop() {
     // Protocol: 2 bytes with big endian length, then the actual command.
@@ -31,7 +29,6 @@ void clixir_read_loop() {
             dump_hex(buffer, bytes_read);
             exit(-1);
         } else {
-            fprintf(stderr, "Handling command of %d bytes, size %d:\n", bytes_read, size);
             dump_hex(buffer, size);
             handle_command(buffer, size);
         }
@@ -49,14 +46,11 @@ static void _handle_command(const char *command, unsigned short len, int *index)
     ei_term term;
 
     if (*index >= len) {
-        fprintf(stderr, "decode done\n");
         return;
     }
 
     int result = ei_decode_ei_term(command, index, &term);
-    fprintf(stderr, "Got result %d index is now 0x%x\n", result, *index);
     assert(result == 1);
-    fprintf(stderr, "Got term type %c / %d\n", term.ei_type, term.ei_type);
     switch (term.ei_type) {
     case ERL_SMALL_TUPLE_EXT:
         _dispatch_command(command, len, index);
@@ -64,13 +58,12 @@ static void _handle_command(const char *command, unsigned short len, int *index)
         break;
     case ERL_LIST_EXT:
         // A list of commands; we can send this for efficiency. Loop and go.
-        fprintf(stderr, "Handling list is arity %d\n", term.arity);
         for (int i = 0; i < term.arity; i++) {
             _handle_command(command, len, index);
         }
         break;
     case ERL_NIL_EXT:
-        fprintf(stderr, "Skip nil\n");
+        // Skip nil.
         break;
     default:
         fprintf(stderr, "Unknown term type %c / %d\n", term.ei_type, term.ei_type);
@@ -118,17 +111,16 @@ void write_response_bytes(const char *bytes, unsigned short len) {
     iov[1].iov_base = (char *) bytes; // ok to drop the const here, read-only access
     iov[1].iov_len  = len;
 
-    fprintf(stderr, "Writing response bytes:\n");
     dump_hex(size_buffer, 2);
     dump_hex(bytes, len);
     assert (writev(STDOUT_FILENO, iov, 2) == len + 2);
-    fprintf(stderr, "Wrote response bytes\n");
 }
 
 // For debugging, shamely stolen from github
 // https://gist.githubusercontent.com/ccbrown/9722406/raw/05202cd8f86159ff09edc879b70b5ac6be5d25d0/DumpHex.c
 
 void dump_hex(const void* data, size_t size) {
+#ifdef CLIXIR_PROTOCOL_DUMP
     char ascii[17];
     size_t i, j;
     ascii[16] = '\0';
@@ -156,4 +148,5 @@ void dump_hex(const void* data, size_t size) {
         }
     }
     fflush(stderr);
+#endif
 }

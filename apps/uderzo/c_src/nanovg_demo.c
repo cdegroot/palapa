@@ -1,5 +1,5 @@
-// 
-// Shamelessly stolen from the NanoVG demo application. 
+//
+// Shamelessly stolen from the NanoVG demo application.
 //
 #include "nanovg_demo.h"
 #include <stdio.h>

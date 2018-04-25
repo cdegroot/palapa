@@ -62,7 +62,6 @@ defmodule Uderzo.GraphicsServer do
   end
 
   defp dispatch_message({pid, response}) when is_pid(pid) do
-    Logger.info("  sending callback #{inspect response} to #{inspect pid}")
     send(pid, response)
   end
 

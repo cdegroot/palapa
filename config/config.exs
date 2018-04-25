@@ -13,11 +13,8 @@ config :mix_test_watch,
   exclude: [
     ~r/\.#/],
   tasks: ["test"]
-
 end
 
 if Mix.env == :test do
-
   config :logger, level: :info
-
 end
