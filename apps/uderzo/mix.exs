@@ -20,20 +20,6 @@ defmodule Mix.Tasks.Compile.Native do
     :ok
   end
 end
-defmodule Mix.Tasks.Compile.GenBindings do
-  def run(_) do
-    case :os.type do
-      {_, :linux} ->
-        {result, error} = System.cmd("make", ["-f", "Makefile.linux", "bindings"], stderr_to_stdout: true, cd: Mix.Tasks.Compile.Native.make_path())
-        IO.binwrite(result)
-        0 = error
-      _ ->
-        IO.warn("Operating system not yet supported")
-        exit(1)
-    end
-    :ok
-  end
-end
 
 defmodule Uderzo.Mixfile do
   use Mix.Project
@@ -49,8 +35,12 @@ defmodule Uderzo.Mixfile do
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
       deps: deps(),
-      compilers: [:native, :gen_bindings] ++ Mix.compilers
+      #compilers: Mix.compilers ++ [:native]
     ]
+  end
+
+  def clixir do
+    ["c_src/uderzo"]
   end
 
   # Run "mix help compile.app" to learn about applications.

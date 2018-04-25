@@ -4,17 +4,48 @@ defmodule Uderzo.Clixir do
   file.
   """
 
+  defmacro __using__(_opts) do
+    quote do
+      import Uderzo.Clixir
+
+      Module.register_attribute(__MODULE__, :cfuns, accumulate: true)
+      @before_compile Uderzo.Clixir
+    end
+  end
+
   defmacro defgfx(clause, do: expression) do
     {function_name, _, parameter_ast} = clause
     parameter_list = Enum.map(parameter_ast, fn({p, _, _}) -> p end)
     {_block, _, exprs} = expression
-    IO.puts("defgfx function_name = #{inspect function_name}")
-    IO.puts("defgfx parameter_list = #{inspect parameter_list}")
-    IO.puts("defgfx exprs = #{inspect exprs}")
-    #c_code = make_c(function_name, parameter_list, exprs)
-    # TODO do something with the c code
-    # Stash in attributes, etcetera,
-    #make_e(function_name, parameter_list, exprs)
+    c_code = make_c(function_name, parameter_list, exprs)
+    e_code = make_e(function_name, parameter_list, exprs)
+    quote do
+      @cfuns {unquote(function_name), unquote(c_code)}
+      unquote(e_code)
+    end
+  end
+
+  # TODO only do this when needed (compare timestamps,etc)
+  defmacro __before_compile__(env) do
+    IO.puts("BEFORE COMPILE")
+    target = Module.get_attribute(env.module, :clixir_target)
+    if is_nil(target) do
+      raise "Please set the @clixir_target attribute on #{env.module}."
+    end
+    {:ok, header} = File.read(target <> ".hx")
+    {:ok, target_file} = File.open(target <> ".c", [:write])
+    IO.write(target_file, header)
+    IO.puts("// END OF HEADER")
+    cfuns = Module.get_attribute(env.module, :cfuns)
+    Enum.map(cfuns, fn {_fun, {hdr, body}} ->
+      IO.puts(target_file, hdr)
+      IO.puts(target_file, body)
+    end)
+    # TODO:
+    # Dump data for gperf
+    # Call gperf
+    # Emit dispatch function
+    File.close(target_file)
   end
 
   # C code stuff starts here
@@ -120,10 +151,11 @@ defmodule Uderzo.Clixir do
   def to_c_var(expr) do
     case expr do
       {name, _, nil} -> to_string(name)
-      {name, _, context} when is_atom(context) -> to_string(name)
+      {name, _, context} when is_atom(context) -> "#{to_string(name)}"
       {:&, _, [{name, _, nil}]} -> "&" <> to_string(name)
       {:__aliases__, _, [name]} -> to_string(name)
       {oper, _, [lhs, rhs]} -> "#{to_c_var(lhs)} #{to_string(oper)} #{to_c_var(rhs)}"
+      constant_string when is_binary(constant_string) -> "\"#{constant_string}\""
       other_pattern -> raise "unknown C AST form #{inspect other_pattern}, please fix macro"
     end
   end
@@ -154,7 +186,7 @@ defmodule Uderzo.Clixir do
       type = cdecls[retval]
       case {retval, type} do
         {{:atom, atom}, nil} ->
-          IO.puts(iobuf, "#{indent}ei_encode_atom(response, &resonse_index, #{to_string atom});")
+          IO.puts(iobuf, "#{indent}ei_encode_atom(response, &resonse_index, \"#{to_string atom}\");")
         {name, :double} ->
           IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")
         {name, type} ->
@@ -176,7 +208,7 @@ defmodule Uderzo.Clixir do
   def make_e(function_name, parameter_list, _exprs) do
     quote do
       def unquote(function_name)(unquote_splicing(parameter_list)) do
-        GraphicsServer.send_command(GraphicsServer, {unquote(function_name), unquote_splicing(parameter_list)})
+        Uderzo.GraphicsServer.send_command(Uderzo.GraphicsServer, {unquote(function_name), unquote_splicing(parameter_list)})
       end
     end
   end

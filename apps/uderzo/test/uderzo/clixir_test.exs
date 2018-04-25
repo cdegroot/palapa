@@ -26,9 +26,9 @@ defmodule Uderzo.ClixirTest do
                   {:glfw_get_cursor_pos, [context: Uderzo.Clixir], [:window, :pid]},
                   [
                     do: {{:., [],
-                          [{:__aliases__, [alias: false], [:GraphicsServer]}, :send_command]}, [],
+                          [{:__aliases__, [alias: false], [:Uderzo, :GraphicsServer]}, :send_command]}, [],
                          [
-                           {:__aliases__, [alias: false], [:GraphicsServer]},
+                           {:__aliases__, [alias: false], [:Uderzo, :GraphicsServer]},
                            {:{}, [], [:glfw_get_cursor_pos, :window, :pid]}
                          ]}
                   ]
@@ -88,7 +88,7 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
 
-        ei_encode_atom(response, &resonse_index, ok);
+        ei_encode_atom(response, &resonse_index, "ok");
         ei_encode_longlong(response, &response_index, (long long) window);
         write_response_bytes(response, response_index);
     } else {
@@ -99,8 +99,8 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
 
-        ei_encode_atom(response, &resonse_index, error);
-        ei_encode_atom(response, &resonse_index, Could not create window);
+        ei_encode_atom(response, &resonse_index, "error");
+        ei_encode_atom(response, &resonse_index, "Could not create window");
         write_response_bytes(response, response_index);
     }
 }

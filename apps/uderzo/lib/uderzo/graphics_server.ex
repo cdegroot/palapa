@@ -57,15 +57,16 @@ defmodule Uderzo.GraphicsServer do
     {:noreply, state}
   end
 
-  defp dispatch_message({pid, response}) when is_pid(pid) do
-    send(pid, response)
-  end
-  defp dispatch_message(stuff) do
-    Logger.info("  ignore data #{inspect stuff}")
-  end
-
   def handle_info(msg, state) do
     Logger.info(" ignore info #{inspect msg}")
     {:noreply, state}
+  end
+
+  defp dispatch_message({pid, response}) when is_pid(pid) do
+    send(pid, response)
+  end
+
+  defp dispatch_message(stuff) do
+    Logger.info("  ignore data #{inspect stuff}")
   end
 end
