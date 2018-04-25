@@ -158,6 +158,11 @@ defmodule Uderzo.Clixir do
         emit_c_body(iobuf, cdecls, [right], "")
       {:if, _, if_stmt} ->
         emit_c_if(iobuf, cdecls, if_stmt, indent)
+      {binary_op, _, args} when binary_op in [:+, :-, :/, :*] ->
+        # Note that the list above is incomplete. Add as needed.
+        [lhs, rhs] = args
+        |> Enum.map(&to_c_var/1)
+        IO.puts(iobuf, "#{indent}#{lhs} #{to_string binary_op} #{rhs};")
       {funcall, _, args} ->
         # Function call
         cargs = args
@@ -165,8 +170,16 @@ defmodule Uderzo.Clixir do
         |> Enum.join(", ")
         IO.puts(iobuf, "#{indent}#{funcall}(#{cargs});")
       # Return tuple. This is probably more hardcoded than we need. Better safe than sorry
-      # We _always_ return {pid, {return_tuple}}
-      {{:pid, _, _}, return_values} ->
+      # We _always_ return {pid, {return_tuple}}. We need multiple clauses as Elixir handles
+      # 2-tuples in a special way.
+      {{:pid, _, _}, {:{}, _, return_values}} ->
+        retvals = return_values
+        |> Enum.map(fn
+          {name, _, _} -> name
+          atom         -> {:atom, atom}
+        end)
+        emit_marshal_return_values(iobuf, retvals, cdecls, indent)
+      {{:pid, _, _}, return_values} when is_tuple(return_values) ->
         retvals = return_values
         |> Tuple.to_list
         |> Enum.map(fn
@@ -174,6 +187,12 @@ defmodule Uderzo.Clixir do
           atom         -> {:atom, atom}
         end)
         emit_marshal_return_values(iobuf, retvals, cdecls, indent)
+      {{:pid, _, _}, return_value} ->
+        retval = case return_value do
+          {name, _, _} -> name
+          atom         -> {:atom, atom}
+        end
+        emit_marshal_return_values(iobuf, [retval], cdecls, indent)
       expr -> raise "unknown expr #{inspect expr}, please fix macro or defgfx declaration"
     end
   end
@@ -203,14 +222,16 @@ defmodule Uderzo.Clixir do
     IO.puts(iobuf, "#{indent}}")
   end
   defp emit_marshal_return_values(iobuf, retvals, cdecls, indent) do
-    IO.puts(iobuf, """
+    IO.write(iobuf, """
       #{indent}char response[BUF_SIZE];
       #{indent}int response_index = 0;
       #{indent}ei_encode_version(response, &response_index);
       #{indent}ei_encode_tuple_header(response, &response_index, 2);
       #{indent}ei_encode_pid(response, &response_index, &pid);
-      #{indent}ei_encode_tuple_header(response, &response_index, #{length(retvals)});
       """)
+    if length(retvals) > 1 do
+      IO.puts(iobuf, "#{indent}ei_encode_tuple_header(response, &response_index, #{length(retvals)});")
+    end
     retvals
     |> Enum.map(fn(retval) ->
       type = cdecls[retval]
@@ -220,6 +241,8 @@ defmodule Uderzo.Clixir do
           IO.puts(iobuf, "#{indent}ei_encode_atom(response, &response_index, \"#{to_string atom}\");")
         {name, :double} ->
           IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")
+        {name, integer} when integer in [:int, :long] ->
+          IO.puts(iobuf, "#{indent}ei_encode_long(response, &response_index, #{name});")
         {name, type} ->
           if String.ends_with?(to_string(type), "*") do
             IO.puts(iobuf, "#{indent}ei_encode_longlong(response, &response_index, (long long) #{name});")

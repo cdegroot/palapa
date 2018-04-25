@@ -59,7 +59,6 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_tuple_header(response, &response_index, 2);
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
-
         ei_encode_atom(response, &response_index, "ok");
         ei_encode_longlong(response, &response_index, (long long) window);
         write_response_bytes(response, response_index);
@@ -70,7 +69,6 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_tuple_header(response, &response_index, 2);
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
-
         ei_encode_atom(response, &response_index, "error");
         ei_encode_atom(response, &response_index, "Could not create window");
         write_response_bytes(response, response_index);

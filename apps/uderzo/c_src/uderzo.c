@@ -74,6 +74,65 @@ void errorcb(int error, const char *desc) {
 // END OF HEADER
 
 
+// Generated code for uderzo_end_frame do not edit!
+static void _dispatch_uderzo_end_frame(const char *buf, unsigned short len, int *index) {
+    erlang_pid pid;
+    GLFWwindow * window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
+    assert(ei_decode_pid(buf, index, &pid) == 0);
+    nvgEndFrame(vg);
+    glEnable(GL_DEPTH_TEST);
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+    char response[BUF_SIZE];
+    int response_index = 0;
+    ei_encode_version(response, &response_index);
+    ei_encode_tuple_header(response, &response_index, 2);
+    ei_encode_pid(response, &response_index, &pid);
+    ei_encode_atom(response, &response_index, "uderzo_end_frame_done");
+    write_response_bytes(response, response_index);
+}
+
+// Generated code for uderzo_start_frame do not edit!
+static void _dispatch_uderzo_start_frame(const char *buf, unsigned short len, int *index) {
+    int fbHeight;
+    int fbWidth;
+    double mx;
+    double my;
+    erlang_pid pid;
+    double pxRatio;
+    double t;
+    int winHeight;
+    int winWidth;
+    GLFWwindow * window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
+    assert(ei_decode_pid(buf, index, &pid) == 0);
+    glfwGetCursorPos(window, &mx, &my);
+    glfwGetWindowSize(window, &winWidth, &winHeight);
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    pxRatio = fbWidth / winWidth;
+    glViewport(0, 0, fbWidth, fbHeight);
+    glClearColor(0.3, 0.3, 0.32, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
+    char response[BUF_SIZE];
+    int response_index = 0;
+    ei_encode_version(response, &response_index);
+    ei_encode_tuple_header(response, &response_index, 2);
+    ei_encode_pid(response, &response_index, &pid);
+    ei_encode_tuple_header(response, &response_index, 5);
+    ei_encode_atom(response, &response_index, "uderzo_start_frame_result");
+    ei_encode_double(response, &response_index, mx);
+    ei_encode_double(response, &response_index, my);
+    ei_encode_long(response, &response_index, winWidth);
+    ei_encode_long(response, &response_index, winHeight);
+    write_response_bytes(response, response_index);
+}
+
 // Generated code for glfw_destroy_window do not edit!
 static void _dispatch_glfw_destroy_window(const char *buf, unsigned short len, int *index) {
     GLFWwindow * window;
@@ -108,8 +167,7 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_tuple_header(response, &response_index, 2);
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
-
-        ei_encode_atom(response, &response_index, "ok");
+        ei_encode_atom(response, &response_index, "glfw_create_window_result");
         ei_encode_longlong(response, &response_index, (long long) window);
         write_response_bytes(response, response_index);
     } else {
@@ -119,7 +177,6 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
         ei_encode_tuple_header(response, &response_index, 2);
         ei_encode_pid(response, &response_index, &pid);
         ei_encode_tuple_header(response, &response_index, 2);
-
         ei_encode_atom(response, &response_index, "error");
         ei_encode_atom(response, &response_index, "Could not create window");
         write_response_bytes(response, response_index);
@@ -135,21 +192,48 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 }
 
 /* ANSI-C code produced by gperf version 3.1 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303423484.gperf  */
-/* Computed positions: -k'' */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303422783.gperf  */
+/* Computed positions: -k'1' */
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303423484.gperf"
+#if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
+      && ('%' == 37) && ('&' == 38) && ('\'' == 39) && ('(' == 40) \
+      && (')' == 41) && ('*' == 42) && ('+' == 43) && (',' == 44) \
+      && ('-' == 45) && ('.' == 46) && ('/' == 47) && ('0' == 48) \
+      && ('1' == 49) && ('2' == 50) && ('3' == 51) && ('4' == 52) \
+      && ('5' == 53) && ('6' == 54) && ('7' == 55) && ('8' == 56) \
+      && ('9' == 57) && (':' == 58) && (';' == 59) && ('<' == 60) \
+      && ('=' == 61) && ('>' == 62) && ('?' == 63) && ('A' == 65) \
+      && ('B' == 66) && ('C' == 67) && ('D' == 68) && ('E' == 69) \
+      && ('F' == 70) && ('G' == 71) && ('H' == 72) && ('I' == 73) \
+      && ('J' == 74) && ('K' == 75) && ('L' == 76) && ('M' == 77) \
+      && ('N' == 78) && ('O' == 79) && ('P' == 80) && ('Q' == 81) \
+      && ('R' == 82) && ('S' == 83) && ('T' == 84) && ('U' == 85) \
+      && ('V' == 86) && ('W' == 87) && ('X' == 88) && ('Y' == 89) \
+      && ('Z' == 90) && ('[' == 91) && ('\\' == 92) && (']' == 93) \
+      && ('^' == 94) && ('_' == 95) && ('a' == 97) && ('b' == 98) \
+      && ('c' == 99) && ('d' == 100) && ('e' == 101) && ('f' == 102) \
+      && ('g' == 103) && ('h' == 104) && ('i' == 105) && ('j' == 106) \
+      && ('k' == 107) && ('l' == 108) && ('m' == 109) && ('n' == 110) \
+      && ('o' == 111) && ('p' == 112) && ('q' == 113) && ('r' == 114) \
+      && ('s' == 115) && ('t' == 116) && ('u' == 117) && ('v' == 118) \
+      && ('w' == 119) && ('x' == 120) && ('y' == 121) && ('z' == 122) \
+      && ('{' == 123) && ('|' == 124) && ('}' == 125) && ('~' == 126))
+/* The character set is not based on ISO-646.  */
+#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
+#endif
+
+#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
 };
 
-#define TOTAL_KEYWORDS 3
+#define TOTAL_KEYWORDS 5
 #define MIN_WORD_LENGTH 7
 #define MAX_WORD_LENGTH 19
 #define MIN_HASH_VALUE 7
-#define MAX_HASH_VALUE 19
-/* maximum key range = 13, duplicates = 0 */
+#define MAX_HASH_VALUE 24
+/* maximum key range = 18, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -158,11 +242,39 @@ __inline
 inline
 #endif
 #endif
-/*ARGSUSED*/
 static unsigned int
 hash (register const char *str, register size_t len)
 {
-  return len;
+  static unsigned char asso_values[] =
+    {
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25,  0,
+      25, 25, 25,  5, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25,  0, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+      25, 25, 25, 25, 25, 25
+    };
+  return len + asso_values[(unsigned char)str[0]];
 }
 
 struct dispatch_entry *
@@ -171,13 +283,18 @@ in_word_set (register const char *str, register size_t len)
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303423484.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
       {"comment", _dispatch_comment},
-      {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+      {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+      {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303423484.gperf"
+#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
+      {"uderzo_start_frame", _dispatch_uderzo_start_frame},
+      {""}, {""}, {""}, {""},
+#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303423484.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303422783.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 

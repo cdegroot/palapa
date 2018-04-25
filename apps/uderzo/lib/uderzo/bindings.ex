@@ -8,6 +8,8 @@ defmodule Uderzo.Bindings do
     fprintf(stderr, "Got comment [%s]", comment)
   end
 
+  # GLFW code
+
   defgfx glfw_create_window(width, height, title, pid) do
     cdecl "char *": title
     cdecl long: [length, width, height]
@@ -21,7 +23,7 @@ defmodule Uderzo.Bindings do
       assert(vg != NULL)
     end
     if window != NULL do
-      {pid, {:ok, window}}
+      {pid, {:glfw_create_window_result, window}}
     else
       # TODO this is sent as an atom instead of a binary.
       {pid, {:error, "Could not create window"}}
@@ -31,6 +33,52 @@ defmodule Uderzo.Bindings do
   defgfx glfw_destroy_window(window) do
     cdecl "GLFWwindow *": window
     glfwDestroyWindow(window)
+  end
+
+  # Utility code
+
+  # This stuff should be done every frame. It's simpler if we do it here than pass
+  # a bunch of messages up and down. When it's ready, a message is sent back that
+  # can kick off the actual drawing. Most of this code lifted straight from the
+  # NVG Demo.
+  defgfx uderzo_start_frame(window, pid) do
+    cdecl "GLFWwindow *": window
+    cdecl erlang_pid: pid
+    cdecl int: [winWidth, winHeight, fbWidth, fbHeight]
+    cdecl double: [mx, my, t, pxRatio]
+
+    glfwGetCursorPos(window, &mx, &my)
+    glfwGetWindowSize(window, &winWidth, &winHeight)
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight)
+    # Calculate pixel ration for hi-dpi devices.
+    pxRatio = fbWidth / winWidth
+
+    # Update and render
+    glViewport(0, 0, fbWidth, fbHeight)
+    glClearColor(0.3, 0.3, 0.32, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
+
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glEnable(GL_CULL_FACE)
+    glDisable(GL_DEPTH_TEST)
+
+    nvgBeginFrame(vg, winWidth, winHeight, pxRatio)
+
+    {pid, {:uderzo_start_frame_result, mx, my, winWidth, winHeight}}
+  end
+
+  defgfx uderzo_end_frame(window, pid) do
+    cdecl "GLFWwindow *": window
+    cdecl erlang_pid: pid
+
+    nvgEndFrame(vg)
+    glEnable(GL_DEPTH_TEST)
+
+    glfwSwapBuffers(window)
+    glfwPollEvents()
+
+    {pid, :uderzo_end_frame_done}
   end
 end
 
