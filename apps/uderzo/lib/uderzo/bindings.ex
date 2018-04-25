@@ -22,6 +22,7 @@ defmodule Uderzo.Bindings do
     if window != NULL do
       {pid, {:ok, window}}
     else
+      # TODO this is sent as an atom instead of a binary.
       {pid, {:error, "Could not create window"}}
     end
   end
