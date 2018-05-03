@@ -1,23 +1,17 @@
 # Palapa
 
-[![CircleCI](https://circleci.com/gh/cdegroot/palapa.svg?style=svg)](https://circleci.com/gh/cdegroot/palapa) [![Coverage Status](https://coveralls.io/repos/github/cdegroot/palapa/badge.svg)](https://coveralls.io/github/cdegroot/palapa)
+This is a giant monorepo of code that's either under development or 
+which I never plan to "release" in the sense of making Hex packages, 
+expecting patches, etcetera. Whenever that happens, code will be 
+pulled out to make everybody's life easier. Until that time, having
+a simple repo is just nicer ;-). 
 
-I got fed up of having my experiments, tools, libraries spread
-out over lots of GH repos. Let's try one very large umbrella.
+## Stuff in here
 
-![Nice Picture Of A Palapa I Found On The Interwebs](https://nyxonenterprises.files.wordpress.com/2012/05/jacky_li_beach_palapa_hires.jpg)
+* `palapa/` is the original super umbrella. I moved it down a level
+  in order to be able to setup ["poncho-style"](http://embedded-elixir.com/post/2017-05-19-poncho-projects/) things for Nerves.
+* `attic/` contains failed experiments, parked stuff, the boulevard of broken dreams. 
+* `tim/` is a heating thermostat project
+* The root dir has some assorted scripts, CI stuff, and so on.
 
-## Included apps
-
-In alphabetical order:
-
-* [Amnesix, a work scheduler using Kafka for persistence and distribution](apps/amnesix)
-* [Entity-Component-System library, for games and maybe other things](apps/ecs)
-* [Erix, a Raft implemenation that should be fit for production use](apps/erix)
-* [Game related utilities](apps/exgame)
-* [A Pong game using ECS](apps/pong)
-* [Generic coding and test tools](apps/simpler)
-* [Some helpers for using WX from Elixir](apps/wxex)
-
-Some of these may end up on Hex, please check the individual package READMEs for
-details.
+Packages typically have path-relative dependencies to each other.

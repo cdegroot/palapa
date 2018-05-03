@@ -1,0 +1,7 @@
+/**
+ * Global tweaks for bootstrap css
+ */
+
+.bg-primary {
+  background-color: black !important;
+}

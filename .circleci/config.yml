@@ -9,6 +9,5 @@ jobs:
           KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
     steps:
       - checkout
-      - run: mix deps.get
-      - run: mix coveralls.circle --umbrella
+      - run: ./testall.sh
 

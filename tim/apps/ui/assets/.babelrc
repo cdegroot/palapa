@@ -1,0 +1,11 @@
+{
+  "presets": [
+    "stage-2"
+  ],
+  "comments": false,
+  "env": {
+    "development": {
+      "presets": ["stage-2"]
+    }
+  }
+}
