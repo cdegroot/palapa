@@ -1,6 +1,6 @@
 defmodule Uderzo.Bindings do
   @moduledoc """
-  Uderzo Elixir->C bindings in Clixir. Note that for demo purposes, 
+  Uderzo Elixir->C bindings in Clixir. Note that for demo purposes,
   this is a hodgepodge of various modules - NanoVG, GLFW, utility
   methods, demo methods; there's nothing however that precludes
   a clean separation.
@@ -23,8 +23,8 @@ defmodule Uderzo.Bindings do
     cdecl "GLFWwindow *": window
     window = glfwCreateWindow(width, height, title, NULL, NULL)
 
-    # There is certain stuff that only can be done when we have a GLFW window. 
-    # Do that now. 
+    # There is certain stuff that only can be done when we have a GLFW window.
+    # Do that now.
 
     glfwMakeContextCurrent(window)
     glfwSwapInterval(0)
@@ -95,10 +95,27 @@ defmodule Uderzo.Bindings do
   # Demo code. These are some very high level calls basically just to get
   # some eyecandy going. Ideally, all the NanoVG primitives would be mapped.
 
+  @doc """
+  Very high level - this just invokes the renderDemo method.
+  """
   defgfx demo_render(mx, my, width, height, t) do
     cdecl double: [mx, my, width, height, t]
 
     renderDemo(vg, mx, my, width, height, t, 0, &data)
+  end
+
+  # Mid-level code. If you look at the original NanoVG
+  # demo code or time travel back in this Github repository,
+  # you can see what happened - bit by bit, `renderDemo` gets
+  # emptier and more methods appear here ;-)
+
+  @doc """
+  Draw creepy eyes following you around
+  """
+  defgfx draw_eyes(x, y, w, h, mx, my, t) do
+    cdecl double: [x, y, w, h, mx, my, t]
+
+    drawEyes(vg, x, y, w, h, mx, my, t)
   end
 end
 

@@ -76,6 +76,25 @@ void errorcb(int error, const char *desc) {
 // END OF HEADER
 
 
+// Generated code for draw_eyes do not edit!
+static void _dispatch_draw_eyes(const char *buf, unsigned short len, int *index) {
+    double h;
+    double mx;
+    double my;
+    double t;
+    double w;
+    double x;
+    double y;
+    assert(ei_decode_double(buf, index, &x) == 0);
+    assert(ei_decode_double(buf, index, &y) == 0);
+    assert(ei_decode_double(buf, index, &w) == 0);
+    assert(ei_decode_double(buf, index, &h) == 0);
+    assert(ei_decode_double(buf, index, &mx) == 0);
+    assert(ei_decode_double(buf, index, &my) == 0);
+    assert(ei_decode_double(buf, index, &t) == 0);
+    drawEyes(vg, x, y, w, h, mx, my, t);
+}
+
 // Generated code for demo_render do not edit!
 static void _dispatch_demo_render(const char *buf, unsigned short len, int *index) {
     double height;
@@ -210,7 +229,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 }
 
 /* ANSI-C code produced by gperf version 3.1 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303422778.gperf  */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303423131.gperf  */
 /* Computed positions: -k'1' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -240,13 +259,13 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
 };
 
-#define TOTAL_KEYWORDS 6
+#define TOTAL_KEYWORDS 7
 #define MIN_WORD_LENGTH 7
 #define MAX_WORD_LENGTH 19
 #define MIN_HASH_VALUE 7
@@ -301,21 +320,24 @@ in_word_set (register const char *str, register size_t len)
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 11 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 12 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"comment", _dispatch_comment},
-      {""}, {""}, {""},
-#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+      {""},
+#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
+      {"draw_eyes", _dispatch_draw_eyes},
+      {""},
+#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"demo_render", _dispatch_demo_render},
       {""}, {""}, {""}, {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"uderzo_start_frame", _dispatch_uderzo_start_frame},
       {""}, {""}, {""}, {""},
-#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 11 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303422778.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303423131.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 
