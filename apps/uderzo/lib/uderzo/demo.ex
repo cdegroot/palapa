@@ -27,8 +27,8 @@ defmodule Uderzo.Demo do
     receive do
       {:uderzo_start_frame_result, mx, my, win_width, win_height} ->
         t = timestamp() - t_start
-        demo_render(mx * 1.0, my * 1.0, win_width * 1.0, win_height * 1.0, t)
-        draw_eyes((win_width * 1.0) - 250, 50.0, 150.0, 100.0, mx * 1.0, my * 1.0, t)
+        demo_render(mx, my, win_width, win_height, t)
+        draw_eyes(win_width - 250.0, 50.0, 150.0, 100.0, mx, my, t)
         uderzo_end_frame(window, self())
         receive do
           :uderzo_end_frame_done ->

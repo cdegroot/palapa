@@ -163,6 +163,9 @@ defmodule Uderzo.Clixir do
         [lhs, rhs] = args
         |> Enum.map(&to_c_var/1)
         IO.puts(iobuf, "#{indent}#{lhs} #{to_string binary_op} #{rhs};")
+      {var, _, nil} when is_atom(var) ->
+        # Variable reference, e.g. in assignment
+        IO.write(iobuf, "#{var};")
       {funcall, _, args} ->
         # Function call
         cargs = args

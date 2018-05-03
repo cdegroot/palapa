@@ -25,12 +25,10 @@ defmodule Uderzo.GraphicsServerTest do
     uderzo_start_frame(window, self())
     receive do
       {:uderzo_start_frame_result, mx, my, win_width, win_height} ->
-        # TODO return floats above so we don't have to convert all the time
         IO.puts "mx, my: #{mx}, #{my}"
         IO.puts "ww, wh: #{win_width}, #{win_height}"
         t = :erlang.system_time(:nanosecond) / 1000000000.0
-	      demo_render(mx * 1.0, my * 1.0, win_width * 1.0, win_height * 1.0, t)
-        draw_eyes((win_width * 1.0) - 250, 50.0, 150.0, 100.0, mx * 1.0, my * 1.0, t)
+	      demo_render(mx, my, win_width, win_height, t)
         uderzo_end_frame(window, self())
         receive do
           :uderzo_end_frame_done ->

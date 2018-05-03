@@ -56,9 +56,9 @@ defmodule Uderzo.Bindings do
     cdecl "GLFWwindow *": window
     cdecl erlang_pid: pid
     cdecl int: [winWidth, winHeight, fbWidth, fbHeight]
-    cdecl double: [mx, my, t, pxRatio]
+    cdecl double: [mouse_x, mouse_y, win_width, win_height, t, pxRatio]
 
-    glfwGetCursorPos(window, &mx, &my)
+    glfwGetCursorPos(window, &mouse_x, &mouse_y)
     glfwGetWindowSize(window, &winWidth, &winHeight)
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight)
     # Calculate pixel ration for hi-dpi devices.
@@ -76,7 +76,11 @@ defmodule Uderzo.Bindings do
 
     nvgBeginFrame(vg, winWidth, winHeight, pxRatio)
 
-    {pid, {:uderzo_start_frame_result, mx, my, winWidth, winHeight}}
+    # Convert to doubles. Naming could be better ;-)
+    win_width = winWidth
+    win_height = winHeight
+
+    {pid, {:uderzo_start_frame_result, mouse_x, mouse_y, win_width, win_height}}
   end
 
   defgfx uderzo_end_frame(window, pid) do
