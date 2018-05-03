@@ -140,7 +140,7 @@ defmodule Uderzo.Clixir do
   # is not really clean - got incrementally built when working on Clixir's spec and
   # first implementation.
   # What really needs to happen is: TODO:
-  # a) transform Elixir AST in C AST
+  # a) transform Elixir AST into C AST
   # b) emit C code for C AST
   @indent "    "
   defp emit_c_body(iobuf, cdecls, exprs, indent \\ @indent)
