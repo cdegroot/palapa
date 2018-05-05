@@ -10,11 +10,14 @@
 
 // OpenGL ES 3 should support the widest array of devices. One
 // clear target is RPi with a framebuffer-to-gpio-display mirror.
-#define GLFW_INCLUDE_ES3
-#define GLFW_INCLUDE_GLEXT
-#include <GLFW/glfw3.h>
+#ifndef UDERZO_VC
+#  define GLFW_INCLUDE_ES2
+#  define GLFW_INCLUDE_GLEXT
+#  include <GLFW/glfw3.h>
+#endif
+
 #include <nanovg.h>
-#define NANOVG_GLES3_IMPLEMENTATION
+#define NANOVG_GLES2_IMPLEMENTATION
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
 
@@ -47,16 +50,20 @@ DemoData data;
 //erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks?
 
 int main() {
+
+#ifdef UDERZO_VC
+    // TODO setup for RPi3
+#else
     if (!glfwInit()) {
         SEND_ERLANG_ERR("Failed to init GLFW.");
         return -1;
     }
 
     glfwSetErrorCallback(errorcb);
-
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#endif
 
     fprintf(stderr, "Uderzo graphics executable started up.\n");
 
