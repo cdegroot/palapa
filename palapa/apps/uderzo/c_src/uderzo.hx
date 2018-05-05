@@ -10,7 +10,13 @@
 
 // OpenGL ES 3 should support the widest array of devices. One
 // clear target is RPi with a framebuffer-to-gpio-display mirror.
-#ifndef UDERZO_VC
+#ifdef UDERZO_VC
+#  include <bcm_host.h>
+#  include <GLES2/gl2.h>
+#  include <GLES2/gl2ext.h>
+#  include <EGL/egl.h>
+#  include <EGL/eglext.h>
+#else
 #  define GLFW_INCLUDE_ES2
 #  define GLFW_INCLUDE_GLEXT
 #  include <GLFW/glfw3.h>

@@ -10,7 +10,13 @@
 
 // OpenGL ES 3 should support the widest array of devices. One
 // clear target is RPi with a framebuffer-to-gpio-display mirror.
-#ifndef UDERZO_VC
+#ifdef UDERZO_VC
+#  include <bcm_host.h>
+#  include <GLES2/gl2.h>
+#  include <GLES2/gl2ext.h>
+#  include <EGL/egl.h>
+#  include <EGL/eglext.h>
+#else
 #  define GLFW_INCLUDE_ES2
 #  define GLFW_INCLUDE_GLEXT
 #  include <GLFW/glfw3.h>
@@ -184,7 +190,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 }
 
 /* C code produced by gperf version 3.0.4 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--134216380.gperf  */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--134217407.gperf  */
 /* Computed positions: -k'1' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -214,7 +220,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
 #endif
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 1 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
@@ -285,24 +291,24 @@ in_word_set (str, len)
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 12 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 12 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"comment", _dispatch_comment},
       {""},
-#line 6 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 6 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"draw_eyes", _dispatch_draw_eyes},
       {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 7 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"demo_render", _dispatch_demo_render},
       {""}, {""}, {""}, {""},
-#line 8 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 9 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 9 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"uderzo_start_frame", _dispatch_uderzo_start_frame},
       {""}, {""}, {""}, {""},
-#line 11 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 11 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 10 "/tmp/clixir-temp-nonode@nohost--134216380.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--134217407.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 
