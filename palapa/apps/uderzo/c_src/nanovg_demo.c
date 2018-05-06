@@ -1125,4 +1125,3 @@ void renderDemo(NVGcontext* vg, float mx, float my, float width, float height,
 	nvgRestore(vg);
 }
 
-static int mini(int a, int b) { return a < b ? a : b; }
