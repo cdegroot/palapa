@@ -22,6 +22,7 @@ defmodule Uderzo.Bindings do
       cdecl "char *": title
       cdecl long: [length, width, height]
       cdecl erlang_pid: pid
+
       {pid, {:glfw_create_window_result, 42}}
     end
 
@@ -32,10 +33,28 @@ defmodule Uderzo.Bindings do
 
     # Note that we can optimize start frame for a fixed display like on an RPi3,
     # but for ease of development we stay compatible with variable-sized windows
-    # for now.
+    # for now. Later on we need to feed the result of the VideoCore screen size
+    # into this thing.
     defgfx uderzo_start_frame(window, pid) do
-      cdecl long: window  # fake handle, ignore
+      cdecl long: window # Fake window
       cdecl erlang_pid: pid
+      cdecl int: [winWidth, winHeight, fbWidth, fbHeight]
+      cdecl double: [mouse_x, mouse_y, win_width, win_height, t, pxRatio]
+
+      fprintf(stderr, "Starting frame")
+      glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+      # Update and render
+      glViewport(0, 0, 1920, 1080)
+      glClearColor(0.3, 0.3, 0.32, 1.0)
+      #glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
+
+      #glEnable(GL_BLEND)
+      #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+      #glEnable(GL_CULL_FACE)
+      #glDisable(GL_DEPTH_TEST)
+
+      nvgBeginFrame(vg, 1920, 1080, 1.0)
 
       {pid, {:uderzo_start_frame_result, 0.0, 0.0, 1920.0, 1080.0}}
     end 
@@ -44,7 +63,12 @@ defmodule Uderzo.Bindings do
       cdecl long: window  # fake handle, ignore
       cdecl erlang_pid: pid
 
-      # TODO swapperoo and stuff.
+      glBindBuffer(GL_ARRAY_BUFFER, 0)
+      glFlush()
+      glFinish()
+      eglSwapBuffers(state.display, state.surface)
+
+      {pid, :uderzo_end_frame_done}
     end
   else
 

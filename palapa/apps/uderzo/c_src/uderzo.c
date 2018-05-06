@@ -1,4 +1,4 @@
-// -*- mode: c; -*-
+#line 1 "c_src/uderzo.hx"// -*- mode: c; -*-
 
 /*
  * This is the Clixir header that is put on top of the generated
@@ -91,9 +91,14 @@ DemoData data;
 //erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks?
 
 int main() {
+  //char name[256];
+  //snprintf(name, 256, "/tmp/mtrace.%d", getpid());
+  //setenv("MALLOC_TRACE", name, 1);
+  //setenv("MALLOC_TRACE", "/dev/stderr", 1);
+  //mtrace();
 
 #ifdef UDERZO_VC
-    // Stolen from the hello triangle sample
+   // Stolen from the hello triangle sample
    int32_t success = 0;
    EGLBoolean result;
    EGLint num_config;
@@ -104,8 +109,7 @@ int main() {
    VC_RECT_T dst_rect;
    VC_RECT_T src_rect;
 
-   static const EGLint attribute_list[] =
-   {
+   static const EGLint attribute_list[] = {
       EGL_RED_SIZE, 8,
       EGL_GREEN_SIZE, 8,
       EGL_BLUE_SIZE, 8,
@@ -113,8 +117,15 @@ int main() {
       EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
       EGL_NONE
    };
+   static const EGLint context_attributes[] = {
+     EGL_CONTEXT_CLIENT_VERSION, 2, 
+     EGL_NONE
+   };
    
    EGLConfig config;
+ 
+   bcm_host_init();
+   memset(&state, 0, sizeof(state));
 
    // get an EGL display connection
    state.display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -128,12 +139,17 @@ int main() {
    result = eglChooseConfig(state.display, attribute_list, &config, 1, &num_config);
    assert(EGL_FALSE != result);
 
-   state.context = eglCreateContext(state.display, config, EGL_NO_CONTEXT, NULL);
-   assert(state.context!=EGL_NO_CONTEXT);
+   result = eglBindAPI(EGL_OPENGL_ES_API);
+   assert(EGL_FALSE != result);
+
+   state.context = eglCreateContext(state.display, config, EGL_NO_CONTEXT, context_attributes);
+   assert(state.context != EGL_NO_CONTEXT);
 
    // create an EGL window surface
    success = graphics_get_display_size(0 /* LCD */, &state.screen_width, &state.screen_height);
    assert(success >= 0);
+
+   fprintf(stderr, "Raspberry screen size %d by %d\n", state.screen_width, state.screen_height);
 
    dst_rect.x = 0;
    dst_rect.y = 0;
@@ -167,10 +183,19 @@ int main() {
    // Set background color and clear buffers
    glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
-   // Enable back face culling.
-   glEnable(GL_CULL_FACE);
+   // Enable back face culling. Why?
+   //glEnable(GL_CULL_FACE);
+
+   glClearColor(0.15, 0.25, 0.35, 1.0);
+   glClear(GL_COLOR_BUFFER_BIT);
+   assert(glGetError() == 0);
 
    // Not in GLES2? TODO check glMatrixMode(GL_MODELVIEW);
+
+   vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+   assert(vg != NULL);
+   loadDemoData(vg, &data);
+
 #else
     if (!glfwInit()) {
         SEND_ERLANG_ERR("Failed to init GLFW.");
@@ -201,7 +226,7 @@ void errorcb(int error, const char *desc) {
 // END OF HEADER
 
 
-// Generated code for draw_eyes do not edit!
+#line 1 "Elixir.Uderzo.Bindings"// Generated code for draw_eyes do not edit!
 static void _dispatch_draw_eyes(const char *buf, unsigned short len, int *index) {
     double h;
     double mx;
@@ -241,14 +266,40 @@ static void _dispatch_uderzo_end_frame(const char *buf, unsigned short len, int 
     long window;
     assert(ei_decode_long(buf, index, &window) == 0);
     assert(ei_decode_pid(buf, index, &pid) == 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glFlush();
+    glFinish();
+    eglSwapBuffers(state.display, state.surface);
+    char response[BUF_SIZE];
+    int response_index = 0;
+    ei_encode_version(response, &response_index);
+    ei_encode_tuple_header(response, &response_index, 2);
+    ei_encode_pid(response, &response_index, &pid);
+    ei_encode_atom(response, &response_index, "uderzo_end_frame_done");
+    write_response_bytes(response, response_index);
 }
 
 // Generated code for uderzo_start_frame do not edit!
 static void _dispatch_uderzo_start_frame(const char *buf, unsigned short len, int *index) {
+    int fbHeight;
+    int fbWidth;
+    double mouse_x;
+    double mouse_y;
     erlang_pid pid;
+    double pxRatio;
+    double t;
+    int winHeight;
+    int winWidth;
+    double win_height;
+    double win_width;
     long window;
     assert(ei_decode_long(buf, index, &window) == 0);
     assert(ei_decode_pid(buf, index, &pid) == 0);
+    fprintf(stderr, "Starting frame");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, 1920, 1080);
+    glClearColor(0.3, 0.3, 0.32, 1.0);
+    nvgBeginFrame(vg, 1920, 1080, 1.0);
     char response[BUF_SIZE];
     int response_index = 0;
     ei_encode_version(response, &response_index);
@@ -256,10 +307,10 @@ static void _dispatch_uderzo_start_frame(const char *buf, unsigned short len, in
     ei_encode_pid(response, &response_index, &pid);
     ei_encode_tuple_header(response, &response_index, 5);
     ei_encode_atom(response, &response_index, "uderzo_start_frame_result");
-    ei_encode_atom(response, &response_index, "0.0");
-    ei_encode_atom(response, &response_index, "0.0");
-    ei_encode_atom(response, &response_index, "1920.0");
-    ei_encode_atom(response, &response_index, "1080.0");
+    ei_encode_double(response, &response_index, 0.0);
+    ei_encode_double(response, &response_index, 0.0);
+    ei_encode_double(response, &response_index, 1920.0);
+    ei_encode_double(response, &response_index, 1080.0);
     write_response_bytes(response, response_index);
 }
 
@@ -289,7 +340,7 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
     ei_encode_pid(response, &response_index, &pid);
     ei_encode_tuple_header(response, &response_index, 2);
     ei_encode_atom(response, &response_index, "glfw_create_window_result");
-    ei_encode_atom(response, &response_index, "42");
+    ei_encode_longlong(response, &response_index, 42);
     write_response_bytes(response, response_index);
 }
 
@@ -302,7 +353,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 }
 
 /* C code produced by gperf version 3.0.4 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--134215293.gperf  */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--134214623.gperf  */
 /* Computed positions: -k'1' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -332,7 +383,7 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
 error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
 #endif
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 1 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
@@ -403,24 +454,24 @@ in_word_set (str, len)
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 12 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 12 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"comment", _dispatch_comment},
       {""},
-#line 6 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 6 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"draw_eyes", _dispatch_draw_eyes},
       {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 7 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"demo_render", _dispatch_demo_render},
       {""}, {""}, {""}, {""},
-#line 8 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 9 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 9 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"uderzo_start_frame", _dispatch_uderzo_start_frame},
       {""}, {""}, {""}, {""},
-#line 11 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 11 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 10 "/tmp/clixir-temp-nonode@nohost--134215293.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--134214623.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 

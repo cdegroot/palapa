@@ -34,15 +34,16 @@ defmodule Uderzo.Clixir do
     end
     {:ok, header} = File.read(target <> ".hx")
     {:ok, target_file} = File.open(target <> ".c", [:write])
+    IO.write(target_file, "#line 1 \"#{target}.hx\"")
     IO.write(target_file, header)
     IO.puts(target_file, "\n\n// END OF HEADER\n\n")
     cfuns = Module.get_attribute(env.module, :cfuns)
+    # TODO keep line number information from Elixir code?
+    IO.write(target_file, "#line 1 \"#{env.module}\"")
     Enum.map(cfuns, fn {_fun, {hdr, body}} ->
       IO.puts(target_file, hdr)
       IO.puts(target_file, body)
     end)
-    # TODO:
-    # Dump data for gperf
     gperf_file = tmpfile.() <> ".gperf"
     {:ok, gperf_data} = File.open(gperf_file, [:write])
     IO.write gperf_data, """
@@ -208,6 +209,7 @@ defmodule Uderzo.Clixir do
       number when is_integer(number) or is_float(number) -> to_string(number)
       {oper, _, [lhs, rhs]} -> "#{to_c_var(lhs)} #{to_string(oper)} #{to_c_var(rhs)}"
       constant_string when is_binary(constant_string) -> "\"#{constant_string}\""  # TODO embedded newlines get expanded
+      {{:., _, [{var, _, nil}, struct_elem]}, _, []} -> "#{var}.#{struct_elem}"
       other_pattern -> raise "unknown C AST form #{inspect other_pattern}, please fix macro"
     end
   end
@@ -239,8 +241,13 @@ defmodule Uderzo.Clixir do
     |> Enum.map(fn(retval) ->
       type = cdecls[retval]
       case {retval, type} do
+        {{:atom, atom}, nil} when is_binary(atom) ->
+          IO.puts(iobuf, "#{indent}ei_encode_string(response, &response_index, \"#{atom}\");")
+        {{:atom, atom}, nil} when is_integer(atom) ->
+          IO.puts(iobuf, "#{indent}ei_encode_longlong(response, &response_index, #{atom});")
+        {{:atom, atom}, nil} when is_float(atom) ->
+          IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{atom});")
         {{:atom, atom}, nil} ->
-          # TODO for some reason, literal strings land here as well.
           IO.puts(iobuf, "#{indent}ei_encode_atom(response, &response_index, \"#{to_string atom}\");")
         {name, :double} ->
           IO.puts(iobuf, "#{indent}ei_encode_double(response, &response_index, #{name});")

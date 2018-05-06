@@ -37,10 +37,10 @@ LDFLAGS+=-lglfw -lGL -lGLU -lm -lGLEW
 endif
 
 uderzo: $(C_DEPS) $(LIBNANOVG)
-	LANG=C $(CC) $(CFLAGS) \
+	LANG=C $(CC) -g $(CFLAGS) \
     -I$(NANOVG_SRC)/src -I$(ERLANG_PATH)/include \
 	  $(INCLUDES) \
     -o uderzo c_src/*.c \
     -L$(ERLANG_PATH)/lib -lerl_interface -lei \
-    -L$(NANOVG_SRC)/build -lnanovg $(LDFLAGS)
+    -L$(NANOVG_SRC)/build -lnanovg -lfreetype $(LDFLAGS)
 

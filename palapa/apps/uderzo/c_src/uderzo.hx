@@ -91,9 +91,14 @@ DemoData data;
 //erlang_pid key_callback_pid; // etcetera for all the GLFW callbacks?
 
 int main() {
+  //char name[256];
+  //snprintf(name, 256, "/tmp/mtrace.%d", getpid());
+  //setenv("MALLOC_TRACE", name, 1);
+  //setenv("MALLOC_TRACE", "/dev/stderr", 1);
+  //mtrace();
 
 #ifdef UDERZO_VC
-    // Stolen from the hello triangle sample
+   // Stolen from the hello triangle sample
    int32_t success = 0;
    EGLBoolean result;
    EGLint num_config;
@@ -104,8 +109,7 @@ int main() {
    VC_RECT_T dst_rect;
    VC_RECT_T src_rect;
 
-   static const EGLint attribute_list[] =
-   {
+   static const EGLint attribute_list[] = {
       EGL_RED_SIZE, 8,
       EGL_GREEN_SIZE, 8,
       EGL_BLUE_SIZE, 8,
@@ -113,8 +117,15 @@ int main() {
       EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
       EGL_NONE
    };
+   static const EGLint context_attributes[] = {
+     EGL_CONTEXT_CLIENT_VERSION, 2, 
+     EGL_NONE
+   };
    
    EGLConfig config;
+ 
+   bcm_host_init();
+   memset(&state, 0, sizeof(state));
 
    // get an EGL display connection
    state.display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -128,12 +139,17 @@ int main() {
    result = eglChooseConfig(state.display, attribute_list, &config, 1, &num_config);
    assert(EGL_FALSE != result);
 
-   state.context = eglCreateContext(state.display, config, EGL_NO_CONTEXT, NULL);
-   assert(state.context!=EGL_NO_CONTEXT);
+   result = eglBindAPI(EGL_OPENGL_ES_API);
+   assert(EGL_FALSE != result);
+
+   state.context = eglCreateContext(state.display, config, EGL_NO_CONTEXT, context_attributes);
+   assert(state.context != EGL_NO_CONTEXT);
 
    // create an EGL window surface
    success = graphics_get_display_size(0 /* LCD */, &state.screen_width, &state.screen_height);
    assert(success >= 0);
+
+   fprintf(stderr, "Raspberry screen size %d by %d\n", state.screen_width, state.screen_height);
 
    dst_rect.x = 0;
    dst_rect.y = 0;
@@ -167,10 +183,19 @@ int main() {
    // Set background color and clear buffers
    glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
 
-   // Enable back face culling.
-   glEnable(GL_CULL_FACE);
+   // Enable back face culling. Why?
+   //glEnable(GL_CULL_FACE);
+
+   glClearColor(0.15, 0.25, 0.35, 1.0);
+   glClear(GL_COLOR_BUFFER_BIT);
+   assert(glGetError() == 0);
 
    // Not in GLES2? TODO check glMatrixMode(GL_MODELVIEW);
+
+   vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+   assert(vg != NULL);
+   loadDemoData(vg, &data);
+
 #else
     if (!glfwInit()) {
         SEND_ERLANG_ERR("Failed to init GLFW.");
