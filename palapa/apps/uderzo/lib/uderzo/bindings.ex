@@ -41,18 +41,17 @@ defmodule Uderzo.Bindings do
       cdecl int: [winWidth, winHeight, fbWidth, fbHeight]
       cdecl double: [mouse_x, mouse_y, win_width, win_height, t, pxRatio]
 
-      fprintf(stderr, "Starting frame")
-      glBindFramebuffer(GL_FRAMEBUFFER, 0)
+      #glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
       # Update and render
       glViewport(0, 0, 1920, 1080)
       glClearColor(0.3, 0.3, 0.32, 1.0)
-      #glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
+      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT)
 
-      #glEnable(GL_BLEND)
-      #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-      #glEnable(GL_CULL_FACE)
-      #glDisable(GL_DEPTH_TEST)
+      glEnable(GL_BLEND)
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+      glEnable(GL_CULL_FACE)
+      glDisable(GL_DEPTH_TEST)
 
       nvgBeginFrame(vg, 1920, 1080, 1.0)
 
@@ -63,9 +62,7 @@ defmodule Uderzo.Bindings do
       cdecl long: window  # fake handle, ignore
       cdecl erlang_pid: pid
 
-      glBindBuffer(GL_ARRAY_BUFFER, 0)
-      glFlush()
-      glFinish()
+      nvgEndFrame(vg)
       eglSwapBuffers(state.display, state.surface)
 
       {pid, :uderzo_end_frame_done}
