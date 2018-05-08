@@ -10,8 +10,9 @@ defmodule UderzoDemoNerves.Application do
   def start(_type, _args) do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: UderzoDemoNerves.Supervisor]
-    Supervisor.start_link(children(@target), opts)
+    #opts = [strategy: :one_for_one, name: UderzoDemoNerves.Supervisor]
+    #Supervisor.start_link(children(@target), opts)
+    Uderzo.Demo.run
   end
 
   # List all child processes to be supervised
