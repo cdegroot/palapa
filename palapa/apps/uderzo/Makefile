@@ -9,7 +9,7 @@ NANOVG_SRC=c_src/nanovg
 ERLANG_PATH=$(shell erl -eval 'io:format("~s", [lists:concat([code:root_dir(), "/erts-", erlang:system_info(version), "/../usr"])])' -s init stop -noshell)
 LIBNANOVG=$(NANOVG_SRC)/build/libnanovg.a
 
-default: compile
+default: priv compile
 
 setup:
 	sudo apt-get install premake4 gperf libglfw3-dev libgles2-mesa-dev libglew-dev libfreetype6-dev
@@ -18,7 +18,10 @@ setup:
 	(cd $(NANOVG_SRC); premake4 gmake)
 
 # TODO non-debug builds for e.g. prod Mix env?
-compile: $(LIBNANOVG) uderzo
+compile: $(LIBNANOVG) priv/uderzo
+
+priv:
+	mkdir priv
 
 $(LIBNANOVG):
 	(cd $(NANOVG_SRC)/build; make nanovg)
@@ -36,11 +39,11 @@ else
 LDFLAGS+=-lglfw -lGL -lGLU -lm -lGLEW
 endif
 
-uderzo: $(C_DEPS) $(LIBNANOVG)
+priv/uderzo: $(C_DEPS) $(LIBNANOVG)
 	LANG=C $(CC) -g $(CFLAGS) \
     -I$(NANOVG_SRC)/src -I$(ERLANG_PATH)/include \
 	  $(INCLUDES) \
-    -o uderzo c_src/*.c \
+    -o priv/uderzo c_src/*.c \
     -L$(ERLANG_PATH)/lib -lerl_interface -lei \
     -L$(NANOVG_SRC)/build -lnanovg -lfreetype $(LDFLAGS)
 

@@ -28,7 +28,8 @@ defmodule Uderzo.GraphicsServer do
 
   def init([]) do
     Logger.info("Starting uderzo process")
-    port = Port.open({:spawn, "./uderzo"},
+    uderzo_bin = Application.app_dir(:uderzo, "priv/uderzo")
+    port = Port.open({:spawn, uderzo_bin},
       [{:packet, 2}, :binary, :exit_status])
     {:ok, %State{port: port}}
   end
