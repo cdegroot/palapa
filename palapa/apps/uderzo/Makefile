@@ -9,7 +9,7 @@ NANOVG_SRC=c_src/nanovg
 ERLANG_PATH=$(shell erl -eval 'io:format("~s", [lists:concat([code:root_dir(), "/erts-", erlang:system_info(version), "/../usr"])])' -s init stop -noshell)
 LIBNANOVG=$(NANOVG_SRC)/build/libnanovg.a
 
-all: setup compile
+default: compile
 
 setup:
 	sudo apt-get install premake4 gperf libglfw3-dev libgles2-mesa-dev libglew-dev libfreetype6-dev
