@@ -8,7 +8,9 @@
 #ifdef NANOVG_GLEW
 #  include <GL/glew.h>
 #endif
-#include <GLFW/glfw3.h>
+#ifndef UDERZO_VC
+#  include <GLFW/glfw3.h>
+#endif
 #include "nanovg.h"
 
 

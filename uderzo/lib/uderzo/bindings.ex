@@ -14,7 +14,8 @@ defmodule Uderzo.Bindings do
     fprintf(stderr, "Got comment [%s]", comment)
   end
 
-  if :erlang.system_info(:system_architecture) == 'armv7l-unknown-linux-gnueabihf' do
+  if :erlang.system_info(:system_architecture) == 'armv7l-unknown-linux-gnueabihf' or
+     System.get_env("MIX_TARGET") == "rpi3" do
     IO.puts "Compiling for RaspberryPi!"
 
     # Fake GLFW code ;-)

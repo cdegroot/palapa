@@ -38,7 +38,8 @@ defmodule UderzoDemoNerves.MixProject do
   defp deps do
     [
       {:nerves, "~> 1.0", runtime: false},
-      {:shoehorn, "~> 0.2"}
+      {:shoehorn, "~> 0.2"},
+      {:uderzo, path: "../uderzo"}
     ] ++ deps(@target)
   end
 

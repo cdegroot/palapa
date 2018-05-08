@@ -8,8 +8,8 @@
  * c) any other stuff you can think off ;-)
  */
 
-// OpenGL ES 3 should support the widest array of devices. One
-// clear target is RPi with a framebuffer-to-gpio-display mirror.
+// OpenGL ES 2 should support the widest array of devices. 
+// When UDERZO_VC is set, we target RaspberryPi's VideoCore.
 #ifdef UDERZO_VC
 #  include <bcm_host.h>
 #  include <GLES2/gl2.h>
