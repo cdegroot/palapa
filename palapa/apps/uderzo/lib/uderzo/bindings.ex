@@ -51,7 +51,7 @@ defmodule Uderzo.Bindings do
       glEnable(GL_BLEND)
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
       glEnable(GL_CULL_FACE)
-      glDisable(GL_DEPTH_TEST)
+      glEnable(GL_DEPTH_TEST)
 
       nvgBeginFrame(vg, 1920, 1080, 1.0)
 
@@ -84,7 +84,7 @@ defmodule Uderzo.Bindings do
       glfwMakeContextCurrent(window)
       glfwSwapInterval(0)
       if vg == NULL do
-        vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG)
+        vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG)
         assert(vg != NULL)
         loadDemoData(vg, &data) # TODO hardcoding demo data in a library... bad.
       end

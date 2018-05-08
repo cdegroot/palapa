@@ -204,7 +204,7 @@ int main() {
 
     glfwSetErrorCallback(errorcb);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
 
@@ -263,11 +263,13 @@ static void _dispatch_demo_render(const char *buf, unsigned short len, int *inde
 // Generated code for uderzo_end_frame do not edit!
 static void _dispatch_uderzo_end_frame(const char *buf, unsigned short len, int *index) {
     erlang_pid pid;
-    long window;
-    assert(ei_decode_long(buf, index, &window) == 0);
+    GLFWwindow * window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
     assert(ei_decode_pid(buf, index, &pid) == 0);
     nvgEndFrame(vg);
-    eglSwapBuffers(state.display, state.surface);
+    glEnable(GL_DEPTH_TEST);
+    glfwSwapBuffers(window);
+    glfwPollEvents();
     char response[BUF_SIZE];
     int response_index = 0;
     ei_encode_version(response, &response_index);
@@ -290,36 +292,40 @@ static void _dispatch_uderzo_start_frame(const char *buf, unsigned short len, in
     int winWidth;
     double win_height;
     double win_width;
-    long window;
-    assert(ei_decode_long(buf, index, &window) == 0);
+    GLFWwindow * window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
     assert(ei_decode_pid(buf, index, &pid) == 0);
-    glViewport(0, 0, 1920, 1080);
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    glfwGetWindowSize(window, &winWidth, &winHeight);
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    pxRatio = fbWidth / winWidth;
+    glViewport(0, 0, fbWidth, fbHeight);
     glClearColor(0.3, 0.3, 0.32, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
-    nvgBeginFrame(vg, 1920, 1080, 1.0);
-    char response[BUF_SIZE];
+    nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
+    win_width = winWidth;    win_height = winHeight;    char response[BUF_SIZE];
     int response_index = 0;
     ei_encode_version(response, &response_index);
     ei_encode_tuple_header(response, &response_index, 2);
     ei_encode_pid(response, &response_index, &pid);
     ei_encode_tuple_header(response, &response_index, 5);
     ei_encode_atom(response, &response_index, "uderzo_start_frame_result");
-    ei_encode_double(response, &response_index, 0.0);
-    ei_encode_double(response, &response_index, 0.0);
-    ei_encode_double(response, &response_index, 1920.0);
-    ei_encode_double(response, &response_index, 1080.0);
+    ei_encode_double(response, &response_index, mouse_x);
+    ei_encode_double(response, &response_index, mouse_y);
+    ei_encode_double(response, &response_index, win_width);
+    ei_encode_double(response, &response_index, win_height);
     write_response_bytes(response, response_index);
 }
 
 // Generated code for glfw_destroy_window do not edit!
 static void _dispatch_glfw_destroy_window(const char *buf, unsigned short len, int *index) {
-    long window;
-    assert(ei_decode_long(buf, index, &window) == 0);
-    assert(window == 42);
+    GLFWwindow * window;
+    assert(ei_decode_longlong(buf, index, (long long *) &window) == 0);
+    glfwDestroyWindow(window);
 }
 
 // Generated code for glfw_create_window do not edit!
@@ -330,19 +336,40 @@ static void _dispatch_glfw_create_window(const char *buf, unsigned short len, in
     char title[BUF_SIZE];
     long title_len;
     long width;
+    GLFWwindow * window;
     assert(ei_decode_long(buf, index, &width) == 0);
     assert(ei_decode_long(buf, index, &height) == 0);
     assert(ei_decode_binary(buf, index, title, &title_len) == 0);
     assert(ei_decode_pid(buf, index, &pid) == 0);
-    char response[BUF_SIZE];
-    int response_index = 0;
-    ei_encode_version(response, &response_index);
-    ei_encode_tuple_header(response, &response_index, 2);
-    ei_encode_pid(response, &response_index, &pid);
-    ei_encode_tuple_header(response, &response_index, 2);
-    ei_encode_atom(response, &response_index, "glfw_create_window_result");
-    ei_encode_longlong(response, &response_index, 42);
-    write_response_bytes(response, response_index);
+    window = glfwCreateWindow(width, height, title, NULL, NULL);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
+    if (vg == NULL) {
+        vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+        assert(vg != NULL);
+        loadDemoData(vg, &data);
+    }
+    if (window != NULL) {
+        char response[BUF_SIZE];
+        int response_index = 0;
+        ei_encode_version(response, &response_index);
+        ei_encode_tuple_header(response, &response_index, 2);
+        ei_encode_pid(response, &response_index, &pid);
+        ei_encode_tuple_header(response, &response_index, 2);
+        ei_encode_atom(response, &response_index, "glfw_create_window_result");
+        ei_encode_longlong(response, &response_index, (long long) window);
+        write_response_bytes(response, response_index);
+    } else {
+        char response[BUF_SIZE];
+        int response_index = 0;
+        ei_encode_version(response, &response_index);
+        ei_encode_tuple_header(response, &response_index, 2);
+        ei_encode_pid(response, &response_index, &pid);
+        ei_encode_tuple_header(response, &response_index, 2);
+        ei_encode_atom(response, &response_index, "error");
+        ei_encode_string(response, &response_index, "Could not create window");
+        write_response_bytes(response, response_index);
+    }
 }
 
 // Generated code for comment do not edit!
@@ -353,8 +380,8 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
     fprintf(stderr, "Got comment [%s]", comment);
 }
 
-/* C code produced by gperf version 3.0.4 */
-/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--134216350.gperf  */
+/* ANSI-C code produced by gperf version 3.1 */
+/* Command-line: /usr/bin/gperf -t /tmp/clixir-temp-nonode@nohost--576460752303422073.gperf  */
 /* Computed positions: -k'1' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -381,10 +408,10 @@ static void _dispatch_comment(const char *buf, unsigned short len, int *index) {
       && ('w' == 119) && ('x' == 120) && ('y' == 121) && ('z' == 122) \
       && ('{' == 123) && ('|' == 124) && ('}' == 125) && ('~' == 126))
 /* The character set is not based on ISO-646.  */
-error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
+#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 1 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 1 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
 struct dispatch_entry {
   char *name;
   void (*dispatch_func)(const char *buf, unsigned short len, int *index);
@@ -405,9 +432,7 @@ inline
 #endif
 #endif
 static unsigned int
-hash (str, len)
-     register const char *str;
-     register unsigned int len;
+hash (register const char *str, register size_t len)
 {
   static unsigned char asso_values[] =
     {
@@ -441,46 +466,38 @@ hash (str, len)
   return len + asso_values[(unsigned char)str[0]];
 }
 
-#ifdef __GNUC__
-__inline
-#if defined __GNUC_STDC_INLINE__ || defined __GNUC_GNU_INLINE__
-__attribute__ ((__gnu_inline__))
-#endif
-#endif
 struct dispatch_entry *
-in_word_set (str, len)
-     register const char *str;
-     register unsigned int len;
+in_word_set (register const char *str, register size_t len)
 {
   static struct dispatch_entry wordlist[] =
     {
       {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 12 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 12 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"comment", _dispatch_comment},
       {""},
-#line 6 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 6 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"draw_eyes", _dispatch_draw_eyes},
       {""},
-#line 7 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 7 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"demo_render", _dispatch_demo_render},
       {""}, {""}, {""}, {""},
-#line 8 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 8 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"uderzo_end_frame", _dispatch_uderzo_end_frame},
       {""},
-#line 9 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 9 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"uderzo_start_frame", _dispatch_uderzo_start_frame},
       {""}, {""}, {""}, {""},
-#line 11 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 11 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"glfw_create_window", _dispatch_glfw_create_window},
-#line 10 "/tmp/clixir-temp-nonode@nohost--134216350.gperf"
+#line 10 "/tmp/clixir-temp-nonode@nohost--576460752303422073.gperf"
       {"glfw_destroy_window", _dispatch_glfw_destroy_window}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-      register int key = hash (str, len);
+      register unsigned int key = hash (str, len);
 
-      if (key <= MAX_HASH_VALUE && key >= 0)
+      if (key <= MAX_HASH_VALUE)
         {
           register const char *s = wordlist[key].name;
 
