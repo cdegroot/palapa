@@ -1,3 +1,0 @@
-[submodule "apps/uderzo/c_src/nanovg"]
-	path = uderzo/c_src/nanovg
-	url = git@github.com:cdegroot/nanovg
