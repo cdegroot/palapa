@@ -14,3 +14,6 @@ RUN ~/.asdf/bin/asdf plugin-add elixir
 RUN ~/.asdf/bin/asdf plugin-add nodejs
 ADD .tool-versions /root
 RUN cd ~; ~/.asdf/bin/asdf install
+# Nerves stuff
+RUN apt install -y build-essential automake autoconf git squashfs-tools ssh-askpass
+RUN apt install -y libssl-dev libncurses5-dev bc m4 unzip cmake python

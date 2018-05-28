@@ -19,7 +19,7 @@ setup:
 	asdf install
 	mix local.hex --force --if-missing
 	mix local.rebar --force
-	echo yes | mix archive.install https://github.com/nerves-project/archives/raw/master/nerves_bootstrap.ez
+	mix archive.install --force hex nerves_bootstrap
 	for i in */.tool-versions; do test ! -f $$i || (cd $$(dirname $$i); asdf install) done
 	for i in */.tool-versions; do test ! -f $$i || (cd $$(dirname $$i); mix local.hex --force --if-missing) done
 	for i in */.tool-versions; do test ! -f $$i || (cd $$(dirname $$i); mix local.rebar --force) done
