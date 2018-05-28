@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/palapa
     docker:
-      - image: cdegroot/palapa-ci:7a44a89
+      - image: cdegroot/palapa-ci:1bf7a93
       - image: cdegroot/kafka:143a272
         environment:
           KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
