@@ -17,6 +17,7 @@ defmodule Ecs.Mixfile do
   end
 
   defp deps do
-    [{:graphmath, "~> 1.0.2"}]
+    [{:graphmath, "~> 1.0.2"},
+     {:simpler, path: "../simpler"}]
   end
 end
