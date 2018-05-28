@@ -1,14 +1,16 @@
 #
 #
-PACKAGES := amnesix ecs erix pong simpler tim tim_nerves
+
+# Everything with a mix.exs is a package.
+PACKAGES := $(shell ls */mix.exs | xargs dirname)
 
 all: setup deps test
 
 deps:
-	set -e; for pkg in $(PACKAGES); do (cd $$pkg; mix deps.get) done
+	set -e; for pkg in $(PACKAGES); do (cd $$pkg; echo "Resolving deps in $$pkg"; mix deps.get) done
 
 test:
-	set -e; for pkg in $(PACKAGES); do (cd $$pkg; mix test) done
+	set -e; for pkg in $(PACKAGES); do (cd $$pkg; echo "Testing in $$pkg"; mix test) done
 
 #
 # We install the global .tool-versions specifications and then
