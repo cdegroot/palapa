@@ -16,6 +16,6 @@ jobs:
           - git clone git@github.com:asdf-vm/asdf.git ~/.asdf --branch 0.4.3
           - source ~/.asdf/asdf.sh && make
       - save_cache:
-        key: asdf
-        paths:
-          - ".asdf"
+          key: asdf
+          paths:
+            - ".asdf"
