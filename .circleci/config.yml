@@ -8,12 +8,10 @@ jobs:
         environment:
           KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
     steps:
-      - restore_cache:
-          keys:
-            - asdf
       - checkout
-      - run: source ~/.asdf/asdf.sh && make
+      - run: source ~/.asdf/asdf.sh && make setup
       - save_cache:
           key: asdf
           paths:
             - ".asdf"
+      - run: source ~/.asdf/asdf.sh && make deps test

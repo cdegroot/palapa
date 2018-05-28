@@ -23,3 +23,4 @@ erl_crash.dump
 /palapa/deps
 /palapa/_build
 
+/.circleci/base_image/.tool-versions

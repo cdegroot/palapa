@@ -12,3 +12,5 @@ RUN git clone https://github.com:/asdf-vm/asdf.git ~/.asdf --branch v0.4.3
 RUN ~/.asdf/bin/asdf plugin-add erlang
 RUN ~/.asdf/bin/asdf plugin-add elixir
 RUN ~/.asdf/bin/asdf plugin-add nodejs
+ADD .tool-versions /root
+RUN cd ~; ~/.asdf/bin/asdf install
