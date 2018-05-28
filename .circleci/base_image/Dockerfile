@@ -4,5 +4,6 @@ FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get build-dep -y erlang
+RUN sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list && \
+    apt-get update && apt-get upgrade -y
+RUN apt-get build-dep -y erlang

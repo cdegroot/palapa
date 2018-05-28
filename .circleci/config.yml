@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/palapa
     docker:
-      - image: elixir:1.6.5
+      - image: cdegroot/palapa-ci:7a44a89
       - image: cdegroot/kafka:143a272
         environment:
           KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
@@ -12,9 +12,10 @@ jobs:
         keys:
           - asdf
       - checkout
-      - run: make
+      - run:
+          - git clone git@github.com:asdf-vm/asdf.git ~/.asdf --branch 0.4.3
+          - source ~/.asdf/asdf.sh && make
       - save_cache:
         key: asdf
         paths:
           - ".asdf"
-

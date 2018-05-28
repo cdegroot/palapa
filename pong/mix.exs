@@ -33,7 +33,7 @@ defmodule Pong.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ecs, in_umbrella: true},
-     {:wxex, in_umbrella: true}]
+    [{:ecs, path: "../ecs/"},
+     {:wxex, path: "../wxex"}]
   end
 end

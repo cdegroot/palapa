@@ -18,6 +18,6 @@ defmodule Amnesix.Mixfile do
 
   defp deps do
     [{:brod, "~> 2.2"},
-     {:simpler, in_umbrella: true}]
+     {:simpler, path: "../simpler"}]
   end
 end
