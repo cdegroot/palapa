@@ -6,10 +6,8 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list && \
     apt-get update && apt-get upgrade -y
-RUN apt-get build-dep -y erlang
-RUN apt-get install -y git
-RUN apt-get install -y curl
-RUN apt-get install -y build-essential
+RUN apt-get install -y git curl build-essential autoconf m4 libncurses5-dev \
+    libwxgtk3.0-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev
 RUN git clone https://github.com:/asdf-vm/asdf.git ~/.asdf --branch v0.4.3
 RUN ~/.asdf/bin/asdf plugin-add erlang
 RUN ~/.asdf/bin/asdf plugin-add elixir
