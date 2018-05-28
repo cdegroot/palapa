@@ -5,16 +5,15 @@ jobs:
     docker:
       - image: cdegroot/palapa-ci:7a44a89
       - image: cdegroot/kafka:143a272
-        environment:
-          KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
+          environment:
+            KAFKA_CREATE_TOPICS: "scheduler:2:1,scheduler_journal:2:1"
     steps:
       - restore_cache:
           keys:
             - asdf
       - checkout
-      - run:
-          - git clone git@github.com:asdf-vm/asdf.git ~/.asdf --branch 0.4.3
-          - source ~/.asdf/asdf.sh && make
+      - run: git clone git@github.com:asdf-vm/asdf.git ~/.asdf --branch 0.4.3
+      - run: source ~/.asdf/asdf.sh && make
       - save_cache:
           key: asdf
           paths:
