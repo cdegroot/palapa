@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/cdegroot/palapa.svg?style=svg)](https://circleci.com/gh/cdegroot/palapa)
+
 # Palapa
 
 This is a giant monorepo of code that's either under development or 
