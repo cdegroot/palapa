@@ -6,11 +6,15 @@ defmodule OutdoorTemp do
 
   use Application
 
-  def start(_type, _args) do
-    children = [%{
-      id: OutdoorTemp,
-      start: {OutdoorTemp.Server, :start_link, []}
-    }]
-    Supervisor.start_link(children, strategy: :one_for_one)
+  if Mix.env == :test do
+    def start(_type, _args), do: {:ok, self()}
+  else
+    def start(_type, _args) do
+      children = [%{
+        id: OutdoorTemp,
+        start: {OutdoorTemp.Server, :start_link, []}
+      }]
+      Supervisor.start_link(children, strategy: :one_for_one)
+    end
   end
 end
