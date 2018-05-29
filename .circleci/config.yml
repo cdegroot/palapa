@@ -13,5 +13,5 @@ jobs:
       - save_cache:
           key: asdf
           paths:
-            - ".asdf"
+            - "~/.asdf"
       - run: source ~/.asdf/asdf.sh && make deps test
