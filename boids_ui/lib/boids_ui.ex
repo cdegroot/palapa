@@ -26,7 +26,7 @@ defmodule BoidsUi do
     # Scale it to reflect win_width, win_height
     |> Enum.map(&(scale(&1, win_width, win_height)))
     # Move it to x, y
-    |> Enum.map(&(move(&1, x, y)))
+    |> Enum.map(&(move(&1, x * win_width, y * win_height)))
     # Flip the y axis
     |> Enum.map(&(flip_y(&1, win_height)))
     draw_boid(x1, y1, x2, y2, x3, y3)
