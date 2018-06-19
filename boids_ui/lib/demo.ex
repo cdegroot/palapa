@@ -8,15 +8,18 @@ defmodule Demo do
   """
 
   @fps 60
+  use Uderzo.GenRenderer
 
   def run do
     Boids.start_link()
-    Uderzo.GenRenderer.start_link("Uderzo Boids", 800, 600, @fps, &render/4)
+    Uderzo.GenRenderer.start_link(__MODULE__, "Uderzo Boids", 800, 600, @fps, [])
+    Process.sleep(5000) # Auto kill switch for now.
   end
 
-  def render(win_width, win_height, _mx, _my) do
+  def render_frame(win_width, win_height, _mx, _my, state) do
     Enum.each(Boids.get_boids(), fn {x, y, direction} ->
       BoidsUi.render(win_width, win_height, x, y, direction)
     end)
+    {:ok, state}
   end
 end
