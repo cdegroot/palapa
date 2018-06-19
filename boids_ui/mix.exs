@@ -38,7 +38,7 @@ defmodule UderzoExample.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:uderzo, path: "../../uderzo_poncho/uderzo", env: Mix.env}
+      {:uderzo, "~> 0.5.1"}
     ]
   end
 end
