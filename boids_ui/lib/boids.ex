@@ -4,7 +4,7 @@ defmodule Boids do
   """
   use GenServer
 
-  @model_fps 50
+  @model_fps 60
   @ms_between_frames div(1_000, @model_fps)
 
   @speed 0.25 / @model_fps # in frame per second so 0.25 is a quarter frame per second.

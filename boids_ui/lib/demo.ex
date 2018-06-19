@@ -12,8 +12,8 @@ defmodule Demo do
   require Logger
 
   # Frame limiting stuff.
-  @fps 50
-  @ms_between_frames div(1_000, 50)
+  @fps 60
+  @ms_between_frames div(1_000, @fps)
   def cur_time, do: :erlang.monotonic_time(:millisecond)
   def next_target_time, do: cur_time() + @ms_between_frames
   # Heuristics - we seem to be one ms slow...
