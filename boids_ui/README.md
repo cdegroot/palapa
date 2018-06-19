@@ -1,4 +1,13 @@
 # BoidsUi
 
-This is the Uderzo UI for a Boids demo. It currently has path dependencies
-to Uderzo's "poncho" repository living next to our repo.
+This is the Uderzo UI for a Boids demo.
+
+## Running
+
+After checkout,
+
+```
+   mix deps.get
+   make -f deps/uderzo/setup.mk $(uname -s | tr A-Z a-z)
+   mix run -e Demo.run
+```

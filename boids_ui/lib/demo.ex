@@ -13,7 +13,7 @@ defmodule Demo do
   def run do
     Boids.start_link()
     Uderzo.GenRenderer.start_link(__MODULE__, "Uderzo Boids", 800, 600, @fps, [])
-    Process.sleep(5000) # Auto kill switch for now.
+    Process.sleep(:infinity)
   end
 
   def render_frame(win_width, win_height, _mx, _my, state) do
