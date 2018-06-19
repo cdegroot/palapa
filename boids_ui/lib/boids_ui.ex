@@ -5,7 +5,7 @@ defmodule BoidsUi do
   use Clixir
   @clixir_header "boids_ui"
 
-  # Triangle points
+  # Our basic boid representation, pointing right.
   @triangle [
     {0.0, -0.5},
     {2.0, 0.0},
@@ -21,14 +21,13 @@ defmodule BoidsUi do
     # Let's try this in Elixir first.
     # Take a triangle
     [{x1, y1}, {x2, y2}, {x3, y3}] = @triangle
-    # Rotate it around the origin
-    |> Enum.map(&(rotate(&1, direction)))
-    # Scale it to reflect win_width, win_height
-    |> Enum.map(&(scale(&1, win_width, win_height)))
-    # Move it to x, y
-    |> Enum.map(&(move(&1, x * win_width, y * win_height)))
-    # Flip the y axis
-    |> Enum.map(&(flip_y(&1, win_height)))
+    |> Enum.map(fn point ->
+      point
+      |> rotate(direction)                   # Rotate it around the origin
+      |> scale(win_width, win_height)        # Scale it to reflect win_width, win_height
+      |> move(x * win_width, y * win_height) # Move it to x, y scaled to window size
+      |> flip_y(win_height)                  # Flip the y axis as Uderzo has origin top left
+    end)
     draw_boid(x1, y1, x2, y2, x3, y3)
   end
 
@@ -54,6 +53,9 @@ defmodule BoidsUi do
 
   defp flip_y({x, y}, win_height), do: {x, win_height - y}
 
+  # TODO so far we're pretty fast so we should be able to write this
+  # without def_c, just native Elixir code. That'd require the stuff
+  # below to move to individual Uderzo functions, of course.
   def_c draw_boid(x1, y1, x2, y2, x3, y3) do
     cdecl double: [x1, y1, x2, y2, x3, y3]
 
