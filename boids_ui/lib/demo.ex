@@ -7,12 +7,14 @@ defmodule Demo do
 
   def run do
     uderzo_init(self())
+    # Toss 50 random boids on the screen
+    boids = Enum.map(1..50, fn _ -> {:rand.normal() * 500, :rand.normal() * 500, :rand.normal()} end)
     receive do
       _msg ->
         glfw_create_window(800, 600, "Uderzo Boids", self())
         receive do
           {:glfw_create_window_result, window} ->
-            render_loop(window, 50.0, 50.0, 0.2)
+            render_loop(window, 0, boids)
             |> IO.inspect
             glfw_destroy_window(window)
           msg ->
@@ -21,17 +23,23 @@ defmodule Demo do
     end
   end
 
-  defp render_loop(window, x, y, direction) do
+  defp render_loop(window, frame, boids) do
+    if rem(frame, 100) == 0 do
+      Logger.info("Render frame #{frame}")
+    end
     uderzo_start_frame(window, self())
     receive do
       {:uderzo_start_frame_result, _mx, _my, win_width, win_height} ->
-        BoidsUi.render(win_width, win_height, x, y, direction)
+        Enum.each(boids, fn {x, y, direction} ->
+          BoidsUi.render(win_width, win_height, x, y, direction)
+        end)
         uderzo_end_frame(window, self())
         receive do
           :uderzo_end_frame_done ->
-            Process.sleep(5) # Sort of limit frame rate
-            {x, y, direction} = update_state(win_width, win_height, x, y, direction)
-            render_loop(window, x, y, direction)
+            #Process.sleep(1) # Sort of limit frame rate
+            render_loop(window, frame + 1, Enum.map(boids, fn {x, y, direction} ->
+                  update_state(win_width, win_height, x, y, direction)
+                end))
         end
     end
   end
