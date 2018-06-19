@@ -38,6 +38,7 @@ defmodule TimNerves.MixProject do
   defp deps do
     [
       {:nerves, "~> 1.0", runtime: false},
+      {:tim_uderzo_ui, path: "../tim_uderzo_ui"},
       {:shoehorn, "~> 0.2"}
     ] ++ deps(@target)
   end
@@ -51,13 +52,6 @@ defmodule TimNerves.MixProject do
     ] ++ system(target)
   end
 
-  defp system("rpi"), do: [{:nerves_system_rpi, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("rpi2"), do: [{:nerves_system_rpi2, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("bbb"), do: [{:nerves_system_bbb, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("ev3"), do: [{:nerves_system_ev3, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("qemu_arm"), do: [{:nerves_system_qemu_arm, "~> 1.0 or ~> 1.0-rc", runtime: false}]
-  defp system("x86_64"), do: [{:nerves_system_x86_64, "~> 1.0 or ~> 1.0-rc", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0 or ~> 1.0-rc", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 end
