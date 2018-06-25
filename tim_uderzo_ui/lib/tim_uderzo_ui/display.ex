@@ -1,9 +1,10 @@
-defmodule TimUderzoUi do
+defmodule TimUderzoUi.Display do
   @moduledoc """
   This modules draws the TIM thermostat display
   """
   use Clixir
-  @clixir_header "tim_uderzo_ui"
+  require Logger
+  @clixir_header "display"
 
   def init() do
     base_dir = Application.app_dir(:tim_uderzo_ui, ".")
@@ -20,7 +21,7 @@ defmodule TimUderzoUi do
   end
 
   def render(win_width, win_height, state) do
-    IO.puts "render #{inspect state}"
+    Logger.info "render #{inspect state}"
     draw_inside_temp(state.indoor_temp, win_width, win_height)
     draw_outside_temp(state.outdoor_temp, win_width, win_height)
     draw_set_temp(state.set_temp, win_width, win_height)

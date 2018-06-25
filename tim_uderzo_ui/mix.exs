@@ -15,6 +15,7 @@ defmodule UderzoExample.MixProject do
 
   def application do
     [
+      mod: {TimUderzoUi.Application, []},
       extra_applications: [:logger]
     ]
   end
@@ -38,7 +39,7 @@ defmodule UderzoExample.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:uderzo, path: "../../uderzo_poncho/uderzo", env: Mix.env},
+      {:uderzo, "~> 0.5.1"},
       {:timex, "~> 3.3"}
     ]
   end
