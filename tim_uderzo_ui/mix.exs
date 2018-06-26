@@ -39,7 +39,7 @@ defmodule UderzoExample.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:uderzo, "~> 0.5.1"},
+      {:uderzo, "~> 0.5.4"},
       {:timex, "~> 3.3"}
     ]
   end

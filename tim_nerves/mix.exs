@@ -35,6 +35,7 @@ defmodule TimNerves.MixProject do
     [
       {:nerves, "~> 1.0", runtime: false},
       {:tim_uderzo_ui, path: "../tim_uderzo_ui"},
+      {:nerves_init_gadget, "~> 0.3"},
       {:shoehorn, "~> 0.2"}
     ] ++ deps(@target)
   end
@@ -47,6 +48,6 @@ defmodule TimNerves.MixProject do
     ] ++ system(target)
   end
 
-  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0.3", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0.4", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 end
