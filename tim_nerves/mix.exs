@@ -19,14 +19,11 @@ defmodule TimNerves.MixProject do
     ]
   end
 
-  # Starting nerves_bootstrap adds the required aliases to Mix.Project.config()
-  # Aliases are only added if MIX_TARGET is set.
   def bootstrap(args) do
     Application.start(:nerves_bootstrap)
     Mix.Task.run("loadconfig", args)
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       mod: {TimNerves.Application, []},
@@ -34,7 +31,6 @@ defmodule TimNerves.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:nerves, "~> 1.0", runtime: false},
@@ -43,7 +39,6 @@ defmodule TimNerves.MixProject do
     ] ++ deps(@target)
   end
 
-  # Specify target specific dependencies
   defp deps("host"), do: []
 
   defp deps(target) do
@@ -52,6 +47,6 @@ defmodule TimNerves.MixProject do
     ] ++ system(target)
   end
 
-  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0 or ~> 1.0-rc", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0.3", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 end
