@@ -35,7 +35,6 @@ defmodule TimNerves.MixProject do
     [
       {:nerves, "~> 1.0", runtime: false},
       {:tim_uderzo_ui, path: "../tim_uderzo_ui"},
-      {:nerves_init_gadget, "~> 0.3"},
       {:shoehorn, "~> 0.2"}
     ] ++ deps(@target)
   end
@@ -44,6 +43,7 @@ defmodule TimNerves.MixProject do
 
   defp deps(target) do
     [
+      {:nerves_init_gadget, "~> 0.3"},
       {:nerves_runtime, "~> 0.4"}
     ] ++ system(target)
   end
