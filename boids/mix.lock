@@ -1,0 +1,6 @@
+%{
+  "file_system": {:hex, :file_system, "0.2.5", "a3060f063b116daf56c044c273f65202e36f75ec42e678dc10653056d3366054", [:mix], [], "hexpm"},
+  "mix_test_watch": {:hex, :mix_test_watch, "0.6.0", "5e206ed04860555a455de2983937efd3ce79f42bd8536fc6b900cc286f5bb830", [:mix], [{:file_system, "~> 0.2.1 or ~> 0.3", [hex: :file_system, repo: "hexpm", optional: false]}], "hexpm"},
+  "proper": {:git, "https://github.com/manopapad/proper.git", "ecf707040f3eaaa9c8dba38d18f18a5a9590a12a", [branch: "master"]},
+  "rstar": {:git, "https://github.com/armon/erl-rstar", "8989531ce1443c9c68b104d21d6f667ebca7ad16", []},
+}
