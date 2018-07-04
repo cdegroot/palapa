@@ -38,6 +38,7 @@ defmodule UderzoExample.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:boids, path: "../boids"},
       {:uderzo, "~> 0.5.1"}
     ]
   end

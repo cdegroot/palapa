@@ -7,19 +7,23 @@ defmodule Demo do
   frame.
   """
 
-  @fps 60
+  @fps 30
   use Uderzo.GenRenderer
 
   def run do
-    Boids.start_link()
-    Uderzo.GenRenderer.start_link(__MODULE__, "Uderzo Boids", 800, 600, @fps, [])
+    {:ok, boids} = Boids.start_link()
+    Uderzo.GenRenderer.start_link(__MODULE__, "Uderzo Boids", 800, 600, @fps, boids)
     Process.sleep(:infinity)
   end
 
-  def render_frame(win_width, win_height, _mx, _my, state) do
-    Enum.each(Boids.get_boids(), fn {x, y, direction} ->
-      BoidsUi.render(win_width, win_height, x, y, direction)
+  def init_renderer(boids) do
+    {:ok, boids}
+  end
+
+  def render_frame(win_width, win_height, _mx, _my, boids) do
+    Enum.each(Boids.get_all(boids), fn {x, y, v} ->
+      BoidsUi.render(win_width, win_height, x, y, v)
     end)
-    {:ok, state}
+    {:ok, boids}
   end
 end

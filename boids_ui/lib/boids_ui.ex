@@ -14,12 +14,12 @@ defmodule BoidsUi do
 
   @doc """
   Render, currently a single boid. x, y is the location of the boid,
-  direction is its current flying direction (in radians. We're doing Math
-  here. k?)
+  velocity is its current flying direction as a vector `{vx, vy}`.
   """
-  def render(win_width, win_height, x, y, direction) do
+  def render(win_width, win_height, x, y, {vx, vy}) do
     # Let's try this in Elixir first.
     # Take a triangle
+    direction = :math.atan2(vy, vx)
     [{x1, y1}, {x2, y2}, {x3, y3}] = @triangle
     |> Enum.map(fn point ->
       point

@@ -10,7 +10,7 @@ defmodule Boids.FlockingBehaviour do
   Code below is mostly a direct interpretation of http://www.kfish.org/boids/pseudocode.html
   """
 
-  import Boids.VectorMath
+  import Boids.Math
 
   @r1_adj 100       # The larger this is, the smaller the effect of rule one
   @r2_min_dist 0.05 # When we consider a boid "too close"
@@ -23,8 +23,7 @@ defmodule Boids.FlockingBehaviour do
   """
   def make_move(neighbours, my_x, my_y, my_v = {_vx, _vy},
                 prev_t, t \\ :erlang.monotonic_time(:microsecond)) do
-    delta_t = t - prev_t
-    t_fraction = delta_t / 1_000_000
+    t_fraction = (t - prev_t) / 1_000_000
     v1 = vmul(t_fraction, rule_one(neighbours, my_x, my_y))
     v2 = vmul(t_fraction, rule_two(neighbours, my_x, my_y))
     v3 = vmul(t_fraction, rule_three(neighbours, my_v))

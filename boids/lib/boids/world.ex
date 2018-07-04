@@ -82,7 +82,7 @@ defmodule Boids.World do
   Return all boids as `{x, y, v}` tuples.
   """
   def get_all(world) do
-    big_box = :rstar_geometry.new(2, {{-2, -2}, {2, 2}}, nil)
+    big_box = :rstar_geometry.new(2, [{-2.0, 2.0}, {-2.0, 2.0}], nil)
     world
     |> Agent.get(fn rtree ->
       :rstar.search_within(rtree, big_box)
@@ -93,12 +93,11 @@ defmodule Boids.World do
   # Private but left public for testing.
 
   def neighbouring_boxes(x, y) do
-    # Get the top-right and bottom left coords
-    {x_tr, y_tr} = {x + @neighbourhood_radius, y + @neighbourhood_radius}
-    {x_bl, y_bl}  = {x - @neighbourhood_radius, y - @neighbourhood_radius}
+    {x_l, x_h} = {x - @neighbourhood_radius, x + @neighbourhood_radius}
+    {y_l, y_h} = {y - @neighbourhood_radius, y + @neighbourhood_radius}
 
-    x_splits = split(x_bl, x_tr)
-    y_splits = split(y_bl, y_tr)
+    x_splits = split(x_l, x_h)
+    y_splits = split(y_l, y_h)
     combine_boxes(x_splits, y_splits)
   end
 
@@ -109,9 +108,9 @@ defmodule Boids.World do
   defp split(low, high), do: [{low, high}]
 
   defp combine_boxes(xs, ys) do
-    for {xl, xh} <- xs,
-        {yl, yh} <- ys do
-        [{xl, yl}, {xh, yh}]
+    for xlh <- xs,
+        ylh <- ys do
+        [xlh, ylh]
     end
   end
 
