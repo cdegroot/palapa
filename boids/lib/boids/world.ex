@@ -15,12 +15,15 @@ defmodule Boids.World do
   determines how far away a boid will check for neighbours to handle its behaviour.
   """
 
+  # TODO handle neighbours correctly. If we're near the origin, then a neighbour on the
+  #      torus that sits in the top right is close by and that can be fixed by shifting
+  #      the neighbour to negative coordinates, etcetera.
   # TODO filter out dead processes as we cannot always guarantee boids delete themselves
 
   @doc """
   How far we'll look for neighbours.
   """
-  @neighbourhood_radius 0.4
+  @neighbourhood_radius 0.2
 
   def start_link() do
     Agent.start_link(fn -> :rstar.new(2) end)
@@ -41,8 +44,8 @@ defmodule Boids.World do
   @doc """
   Add an initial position
   """
-  def add_pos(world, x, y, v) do
-    item = mkitem(x, y, v)
+  def add_pos(world, x, y, v, id \\ self()) do
+    item = mkitem(x, y, v, id)
     Agent.update(world, fn rtree ->
       :rstar.insert(rtree, item)
     end)
@@ -64,20 +67,31 @@ defmodule Boids.World do
   box overlaps with any of the edges.
   """
   def get_neighbours(world, x, y) do
+    # TODO optimize this. Way too many loops. Ideally: quick loop inside the agent (minimal)
+    #      and a single loop (or nested one given the shifts) outside.
     boxes = neighbouring_boxes(x, y)
-    geos = Enum.map(boxes, fn box -> :rstar_geometry.new(2, box, nil) end)
+    geos = Enum.map(boxes, fn {box, shift} -> {:rstar_geometry.new(2, box, nil), shift} end)
     world
     |> Agent.get(fn rtree ->
-      Enum.map(geos, fn geo ->
-        :rstar.search_within(rtree, geo)
+      Enum.map(geos, fn {geo, shift} ->
+        {:rstar.search_within(rtree, geo), shift}
       end)
     end)
     # TODO filter down from a box to a circle
+    |> Enum.map(fn {geos, shift} ->
+      Enum.map(geos, fn(geo) ->
+        {geo, shift}
+      end)
+    end)
     |> List.flatten()
-    |> Enum.reject(fn {:geometry, 2, _coords, {pid, _v}} ->
+    |> Enum.reject(fn {{:geometry, 2, _coords, {pid, _v}}, shift} ->
       pid == self()
     end)
-    |> geos_to_boids()
+    |> Enum.map(fn {geo, shift} ->
+      geo
+      |> geo_to_boid
+      |> apply_shift(shift)
+    end)
   end
 
 
@@ -106,28 +120,33 @@ defmodule Boids.World do
 
   # Spit ranges or not around the borders of the torus. Note that as the centerpoint
   # should always be on the torus, we cannot have a bounding box completely outside it.
-  defp split(low, high) when low < 0.0, do: [{1.0 + low, 1.0}, {0.0, high}]
-  defp split(low, high) when high > 1.0, do: [{0, high - 1.0}, {low, 1.0}]
-  defp split(low, high), do: [{low, high}]
+  # We return triplets: the search range and how results should be shifted
+  defp split(low, high) when low < 0.0, do: [{1.0 + low, 1.0, -1.0}, {0.0, high, 0.0}]
+  defp split(low, high) when high > 1.0, do: [{0, high - 1.0, +1.0}, {low, 1.0,  0.0}]
+  defp split(low, high), do: [{low, high, 0.0}]
 
   defp combine_boxes(xs, ys) do
-    for xlh <- xs,
-        ylh <- ys do
-        [xlh, ylh]
+    for {xl, xh, xshift} <- xs,
+        {yl, yh, yshift} <- ys do
+        {[{xl, xh}, {yl, yh}], {xshift, yshift}}
     end
   end
 
   defp geos_to_boids(geos) do
     geos
-    |> Enum.map(fn {:geometry, _2d, [{x, x}, {y, y}], {_boid_pid, v}} ->
+    |> Enum.map(&geo_to_boid/1)
+  end
+  defp geo_to_boid({:geometry, _2d, [{x, x}, {y, y}], {_boid_pid, v}}) do
       {x, y, v}
-    end)
+  end
+  defp apply_shift({x, y, v}, {dx, dy}) do
+    {x + dx, y + dy, v}
   end
 
   # Always call mkitem in the context of the caller so self() is the actual boid
   # that's calling us.
-  defp mkitem(x, y, v) do
-    :rstar_geometry.point2d(x, y, {self(), v})
+  defp mkitem(x, y, v, id \\ self()) do
+    :rstar_geometry.point2d(x, y, {id, v})
   end
 
   # For testing/debugging
