@@ -86,4 +86,6 @@ defmodule WorldTest do
     add_pos(world, 0.7, 0.2, {4.0, 4.5})
     assert get_neighbours(world, 0.2, 0.5) == [{0.3, 0.6, {2.0, 2.5}}]
   end
+
+  # TODO test update?
 end

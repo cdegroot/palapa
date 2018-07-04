@@ -6,15 +6,16 @@ defmodule Boids.World do
   parallelism.
 
   The r-tree library has of course the x and y coordinates and the "opaque value"
-  we store in it is a tuple `{velocity, boid_pid}`. However, matches will just
+  we store in it is a tuple `{velocity, boid_world}`. However, matches will just
   return `{x, y, v}` tuples so this is a mostly internal detail. Velocity is
-  stored as a `{direction, magnitude}` tuple (iow a vector in polar coordinates}
-  until the math tells us otherwise ;-)
+  stored as a `{dx, dt}` tuple (iow a vector) as that makes calculations simpler.
 
   The world is modelled as a torus with x and y coordinates in the interval [0, 1] as
   floating points. The neighbourhood radius is fixed (see `@neighbourhood_radius`) and
   determines how far away a boid will check for neighbours to handle its behaviour.
   """
+
+  # TODO filter out dead processes as we cannot always guarantee boids delete themselves
 
   @doc """
   How far we'll look for neighbours.
@@ -28,10 +29,10 @@ defmodule Boids.World do
   @doc """
   Update position from old position to new position.
   """
-  def update_pos(pid, old_x, old_y, old_v, new_x, new_y, new_v) do
+  def update_pos(world, old_x, old_y, old_v, new_x, new_y, new_v) do
     old_item = mkitem(old_x, old_y, old_v)
     new_item = mkitem(new_x, new_y, new_v)
-    Agent.update(pid, fn rtree ->
+    Agent.update(world, fn rtree ->
       rtree = :rstar.delete(rtree, old_item)
       :rstar.insert(rtree, new_item)
     end)
@@ -40,10 +41,20 @@ defmodule Boids.World do
   @doc """
   Add an initial position
   """
-  def add_pos(pid, x, y, v) do
+  def add_pos(world, x, y, v) do
     item = mkitem(x, y, v)
-    Agent.update(pid, fn rtree ->
+    Agent.update(world, fn rtree ->
       :rstar.insert(rtree, item)
+    end)
+  end
+
+  @doc """
+  Remove a position (when boid dies)
+  """
+  def del_pos(world, x, y, v) do
+    item = mkitem(x, y, v)
+    Agent.update(world, fn rtree ->
+      :rstar.delete(rtree, item)
     end)
   end
 
@@ -52,19 +63,31 @@ defmodule Boids.World do
   This can cause up to four queries depending on whether the bounding
   box overlaps with any of the edges.
   """
-  def get_neighbours(pid, x, y) do
+  def get_neighbours(world, x, y) do
     boxes = neighbouring_boxes(x, y)
     geos = Enum.map(boxes, fn box -> :rstar_geometry.new(2, box, nil) end)
-    neighbours = Agent.get(pid, fn rtree ->
+    world
+    |> Agent.get(fn rtree ->
       Enum.map(geos, fn geo ->
         :rstar.search_within(rtree, geo)
       end)
     end)
-    neighbours
-    |> List.flatten
-    |> Enum.map(fn {:geometry, _2d, [{x, x}, {y, y}], {_pid, v}} ->
-      {x, y, v}
+    # TODO filter down from a box to a circle
+    |> List.flatten()
+    |> geos_to_boids()
+  end
+
+
+  @doc """
+  Return all boids as `{x, y, v}` tuples.
+  """
+  def get_all(world) do
+    big_box = :rstar_geometry.new(2, {{-2, -2}, {2, 2}}, nil)
+    world
+    |> Agent.get(fn rtree ->
+      :rstar.search_within(rtree, big_box)
     end)
+    |> geos_to_boids()
   end
 
   # Private but left public for testing.
@@ -92,6 +115,13 @@ defmodule Boids.World do
     end
   end
 
+  defp geos_to_boids(geos) do
+    geos
+    |> Enum.map(fn {:geometry, _2d, [{x, x}, {y, y}], {_boid_pid, v}} ->
+      {x, y, v}
+    end)
+  end
+
   # Always call mkitem in the context of the caller so self() is the actual boid
   # that's calling us.
   defp mkitem(x, y, v) do
@@ -99,7 +129,7 @@ defmodule Boids.World do
   end
 
   # For testing/debugging
-  def get_tree(pid) do
-    Agent.get(pid, fn tree -> tree end)
+  def get_tree(world) do
+    Agent.get(world, fn tree -> tree end)
   end
 end
