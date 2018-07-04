@@ -18,10 +18,7 @@ defmodule Boids.Math do
   def vmul({x, y}, f), do: {x * f, y * f}
 
   @doc "Keep coordinates on a torus"
-  def tbound(v) when v >= 0.0 and v < 1.0, do: v
-  def tbound(v) when v >= 1.0, do: v - Float.floor(v)
-  def tbound(v) when v < 0.0, do: Float.ceil(v) - v
-  def tbound(_v), do: raise "cheater, you just invented a new universe"
+  def tbound(v), do: v - Float.floor(v)
 
   def tbound(x, y), do: {tbound(x), tbound(y)}
 end

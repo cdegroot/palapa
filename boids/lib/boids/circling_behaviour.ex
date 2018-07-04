@@ -13,7 +13,7 @@ defmodule Boids.CirclingBehaviour do
     {new_x, new_y} = tbound(x + (vx * t_fraction),
                             y + (vy * t_fraction))
 
-    direction = :math.atan2(y, x) + (@turn_speed * t_fraction)
+    direction = :math.atan2(vy, vx) + (@turn_speed * t_fraction)
     magnitude = :math.sqrt(vx * vx + vy * vy)
     {new_vx, new_vy} = {:math.cos(direction) * magnitude,
                         :math.sin(direction) * magnitude}
