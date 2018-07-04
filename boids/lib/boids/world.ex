@@ -20,7 +20,7 @@ defmodule Boids.World do
   @doc """
   How far we'll look for neighbours.
   """
-  @neighbourhood_radius 0.2
+  @neighbourhood_radius 0.4
 
   def start_link() do
     Agent.start_link(fn -> :rstar.new(2) end)
@@ -74,6 +74,9 @@ defmodule Boids.World do
     end)
     # TODO filter down from a box to a circle
     |> List.flatten()
+    |> Enum.reject(fn {:geometry, 2, _coords, {pid, _v}} ->
+      pid == self()
+    end)
     |> geos_to_boids()
   end
 
