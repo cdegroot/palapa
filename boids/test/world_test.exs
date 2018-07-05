@@ -71,7 +71,7 @@ defmodule WorldTest do
        {[{0.7, 1.0}, {0.62, 1.0}], {0.0, 0.0}}])
   end
 
-  @grid 30
+  @grid 10
 
   test "World integration test" do
     {:ok, world} = Boids.World.start_link()
