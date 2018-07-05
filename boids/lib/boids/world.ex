@@ -30,8 +30,8 @@ defmodule Boids.World do
       :ets.new(:world, [
             :set,
             :public,
-            {:read_concurrency, true},
-            {:write_concurrency, true}
+            {:read_concurrency, false},
+            {:write_concurrency, false}
           ])
     end)
     # We just return the table and let the agent just hum around owning the ETS table.
