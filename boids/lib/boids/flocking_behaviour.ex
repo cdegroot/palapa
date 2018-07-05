@@ -12,9 +12,9 @@ defmodule Boids.FlockingBehaviour do
 
   import Boids.Math
 
-  @r1_adj 100       # The larger this is, the slower boids move to each other
-  @r2_min_dist 0.1  # When we consider a boid "too close"
-  @r3_adj 8         # The larger this is, the slower boids match velocity
+  @r1_adj 25       # The larger this is, the slower boids move to each other
+  @r2_min_dist 0.05 # When we consider a boid "too close"
+  @r3_adj 4         # The larger this is, the slower boids match velocity
 
   @doc """
   Calculate a single move. Called by a boid that wants to update its position. It
