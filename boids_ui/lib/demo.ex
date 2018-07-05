@@ -21,6 +21,7 @@ defmodule Demo do
   end
 
   def render_frame(win_width, win_height, _mx, _my, boids) do
+    BoidsUi.paint_background(win_width, win_height)
     Enum.each(Boids.get_all(boids), fn {x, y, v} ->
       BoidsUi.render(win_width, win_height, x, y, v)
     end)

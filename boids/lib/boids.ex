@@ -13,11 +13,11 @@ defmodule Boids do
   * `{:ok, simulation}`: everything went well
   """
 
-  #@c Boids.CirclingBehaviour
+  @c Boids.CirclingBehaviour
   @f Boids.FlockingBehaviour
 
-  def start_link(count \\ 50,
-                 initial_behaviour \\ @f,
+  def start_link(count \\ 100,
+                 initial_behaviour \\ @c,
                  next_behaviour \\ @f) do
     {:ok, world} = Boids.World.start_link()
     {:ok, pid} = Boids.Supervisor.start_link(world, count, initial_behaviour, next_behaviour)

@@ -7,10 +7,33 @@ defmodule BoidsUi do
 
   # Our basic boid representation, pointing right.
   @triangle [
-    {0.0, -0.5},
-    {2.0, 0.0},
-    {0.0, 0.5}
+    {0.0, -0.2},
+    {1.0, 0.0},
+    {0.0, 0.2}
   ]
+
+  @doc """
+  Paint the background some blue sky color with a sun.
+  """
+  def_c paint_background(win_width, win_height) do
+    cdecl double: [win_width, win_height]
+    cdecl "NVGpaint": air
+    cdecl "NVGpaint": sun
+
+    air = nvgLinearGradient(vg, win_width / 2, 0, win_width / 2, win_height, nvgRGBA(0, 0, 128, 255), nvgRGBA(0, 128, 255, 255))
+    #air = nvgLinearGradient(vg, win_width / 2, 0, win_width / 2, win_height, nvgRGBA(0, 0, 128, 255), nvgRGBA(128, 64, 0, 255))
+    nvgBeginPath(vg)
+    nvgRect(vg, 0, 0, win_width, win_height)
+    nvgFillPaint(vg, air)
+    nvgFill(vg)
+
+    sun = nvgRadialGradient(vg, win_width * 0.8, win_height * 0.2, 0.04 * win_width, 0.05 * win_width, nvgRGBA(255, 255, 0, 255), nvgRGBA(128, 128, 0, 0))
+
+    nvgBeginPath(vg)
+    nvgCircle(vg, win_width * 0.8, win_height * 0.2, 0.1 * win_width)
+    nvgFillPaint(vg, sun)
+    nvgFill(vg)
+  end
 
   @doc """
   Render, currently a single boid. x, y is the location of the boid,
@@ -63,9 +86,10 @@ defmodule BoidsUi do
     nvgMoveTo(vg, x1, y1)
     nvgLineTo(vg, x2, y2)
     nvgLineTo(vg, x3, y3)
-    nvgFillColor(vg, nvgRGBA(128, 192, 192, 255))
+    nvgLineTo(vg, x1, y1)
+    nvgFillColor(vg, nvgRGBA(255, 255, 255, 192))
     nvgFill(vg)
-	  nvgStrokeColor(vg, nvgRGBA(192, 128, 128, 255))
+	  nvgStrokeColor(vg, nvgRGBA(0, 0, 0, 224))
 	  nvgStroke(vg)
   end
 end
