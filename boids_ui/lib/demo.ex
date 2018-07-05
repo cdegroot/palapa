@@ -7,7 +7,7 @@ defmodule Demo do
   frame.
   """
 
-  @fps 60
+  @fps 50
   use Uderzo.GenRenderer
 
   def run do

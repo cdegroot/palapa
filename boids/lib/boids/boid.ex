@@ -5,7 +5,7 @@ defmodule Boids.Boid do
   use GenServer
   import Boids.Math
 
-  @fps 60 # Update ourselves this often per second
+  @fps 50 # Update ourselves this often per second
   @fps_sleep_ms round(1000 / @fps)
   @lifetime 60_000 # Expected lifetime of a boid, in milliseconds
   @min_lifetime 2_000 # Minimum lifetime of a boid

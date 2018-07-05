@@ -46,5 +46,14 @@ defmodule PerformanceTest do
     IO.puts("1000 runs: #{t_total}us, #{t_each}us/iteration")
     time_per_frame = 1_000_000 / 50
     IO.puts("Limit at 50fps: #{time_per_frame / t_each}")
+
+    # Some data for r-tree: fetch is 43us, move is 7us, update is 70us for ~120us.
+    # Testing this with a straight ETS table gave roughly the same numbers. Dropping
+    # Read and Write concurrency then made it drop to around 90us. CPU usage is
+    # mildly better. I guess that a close look at the rtree code would give more
+    # possibilities for optimization.
+
+    # It's interesting that all the floating point stuff is cheap compared to
+    # all the data manipulation stuff :)
   end
 end

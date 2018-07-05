@@ -26,19 +26,24 @@ defmodule Boids.World do
   @neighbourhood_radius 0.2
 
   def start_link() do
-    Agent.start_link(fn -> :rstar.new(2) end)
+    {:ok, pid} = Agent.start_link(fn ->
+      :ets.new(:world, [
+            :set,
+            :public,
+            {:read_concurrency, false},
+            {:write_concurrency, false}
+          ])
+    end)
+    # We just return the table and let the agent just hum around owning the ETS table.
+    {:ok, Agent.get(pid, & &1)}
   end
 
   @doc """
   Update position from old position to new position.
   """
   def update_pos(world, old_x, old_y, old_v, new_x, new_y, new_v) do
-    old_item = mkitem(old_x, old_y, old_v)
-    new_item = mkitem(new_x, new_y, new_v)
-    Agent.update(world, fn rtree ->
-      rtree = :rstar.delete(rtree, old_item)
-      :rstar.insert(rtree, new_item)
-    end)
+    item = mkitem(new_x, new_y, new_v)
+    :ets.insert(world, item)
   end
 
   @doc """
@@ -46,19 +51,14 @@ defmodule Boids.World do
   """
   def add_pos(world, x, y, v, id \\ self()) do
     item = mkitem(x, y, v, id)
-    Agent.update(world, fn rtree ->
-      :rstar.insert(rtree, item)
-    end)
+    :ets.insert(world, item)
   end
 
   @doc """
   Remove a position (when boid dies)
   """
-  def del_pos(world, x, y, v) do
-    item = mkitem(x, y, v)
-    Agent.update(world, fn rtree ->
-      :rstar.delete(rtree, item)
-    end)
+  def del_pos(world, _x, _y, _v) do
+    :ets.delete(world, self())
   end
 
   @doc """
@@ -67,44 +67,39 @@ defmodule Boids.World do
   box overlaps with any of the edges.
   """
   def get_neighbours(world, x, y) do
-    # TODO optimize this. Way too many loops. Ideally: quick loop inside the agent (minimal)
-    #      and a single loop (or nested one given the shifts) outside.
     boxes = neighbouring_boxes(x, y)
-    geos = Enum.map(boxes, fn {box, shift} -> {:rstar_geometry.new(2, box, nil), shift} end)
-    world
-    |> Agent.get(fn rtree ->
-      Enum.map(geos, fn {geo, shift} ->
-        {:rstar.search_within(rtree, geo), shift}
-      end)
-    end)
-    # TODO filter down from a box to a circle
-    |> Enum.map(fn {geos, shift} ->
-      Enum.map(geos, fn(geo) ->
-        {geo, shift}
-      end)
-    end)
-    |> List.flatten()
-    |> Enum.reject(fn {{:geometry, 2, _coords, {pid, _v}}, shift} ->
-      pid == self()
-    end)
-    |> Enum.map(fn {geo, shift} ->
-      geo
-      |> geo_to_boid
-      |> apply_shift(shift)
-    end)
+    matches = :ets.foldl(fn {id, x, y, v}, acc ->
+      if id != self() do
+        {{sx, sy}, is_within} = is_within_boxes?(boxes, x, y)
+        if is_within do
+          [{x + sx, y + sy, v} | acc]
+        else
+          acc
+        end
+      else
+        acc
+      end
+    end, [], world)
   end
 
+  defp is_within_boxes?(boxes_and_shifts, x, y) do
+    bas = boxes_and_shifts
+    |> Enum.find(fn {[{xl, xh}, {yl, yh}], shift} ->
+      xl <= x and x < xh and yl <= y and y < yh
+    end)
+    case bas do
+      nil -> {{0, 0}, false}
+      {[xs, ys], shift} -> {shift, true}
+    end
+  end
 
   @doc """
   Return all boids as `{x, y, v}` tuples.
   """
   def get_all(world) do
-    big_box = :rstar_geometry.new(2, [{-2.0, 2.0}, {-2.0, 2.0}], nil)
-    world
-    |> Agent.get(fn rtree ->
-      :rstar.search_within(rtree, big_box)
-    end)
-    |> geos_to_boids()
+    :ets.foldl(fn {id, x, y, v}, acc ->
+      [{x, y, v} | acc]
+    end, [], world)
   end
 
   # Private but left public for testing.
@@ -146,7 +141,7 @@ defmodule Boids.World do
   # Always call mkitem in the context of the caller so self() is the actual boid
   # that's calling us.
   defp mkitem(x, y, v, id \\ self()) do
-    :rstar_geometry.point2d(x, y, {id, v})
+    {id, x, y, v}
   end
 
   # For testing/debugging
