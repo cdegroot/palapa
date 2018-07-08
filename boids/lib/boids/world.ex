@@ -1,24 +1,32 @@
 defmodule Boids.World do
   @moduledoc """
   World definition for Boids. We stash the locations and directions of
-  all boids in an R-Tree we keep in an agent for easy access. This allows
-  queries and updates to run mostly inside each Boid's process, thus maximalizing
-  parallelism.
-
-  The r-tree library has of course the x and y coordinates and the "opaque value"
-  we store in it is a tuple `{velocity, boid_world}`. However, matches will just
-  return `{x, y, v}` tuples so this is a mostly internal detail. Velocity is
-  stored as a `{dx, dt}` tuple (iow a vector) as that makes calculations simpler.
+  all boids in a central location for easy access. It is in essence a
+  blackboard where Boids keep their position for others to act on.
 
   The world is modelled as a torus with x and y coordinates in the interval [0, 1] as
   floating points. The neighbourhood radius is fixed (see `@neighbourhood_radius`) and
   determines how far away a boid will check for neighbours to handle its behaviour.
+
+  Implementation notes: initially, I started using an r-tree library but I wasn't
+  super happy about the result. A plain ETS table with a full table scan for fetches
+  turned out to be quicker. On my 2011 MBP, the fetch is around 56us and an update -
+  which was quite slow in the r-tree version - is only 22us.
+
+  Interestingly enough, the "boid" behaviour - all the scary math stuff - only takes 7us
+  meaning that this module is the bottleneck in two ways: it's slowest linearly, and it's the
+  shared mutable state. Some ideas:
+  * Use 100 genservers on a grid each responsible for a 0.1x0.1 area keeping data in a Map. a
+    Map insert however seems to be slower than an ETS insert.
+  * Use multiple ETS tables so we don't need to loop through 100 entries, sort of poor man's
+    tree. However, unless you go to silly fine-grained tables, most boids flock together so
+    you're probably still looking at most entries.
+  * Probably a nice jump in performance: move from `foldl` to at least pre-selecting most
+    neighbours with `match`. Match specifications run inside the BIF bits of ETS so should
+    be quite a bit faster than looping with `fold`
   """
 
-  # TODO handle neighbours correctly. If we're near the origin, then a neighbour on the
-  #      torus that sits in the top right is close by and that can be fixed by shifting
-  #      the neighbour to negative coordinates, etcetera.
-  # TODO filter out dead processes as we cannot always guarantee boids delete themselves
+  # TODO filter out dead processes as we cannot always guarantee boids delete themselves?
 
   @doc """
   How far we'll look for neighbours.
@@ -30,8 +38,8 @@ defmodule Boids.World do
       :ets.new(:world, [
             :set,
             :public,
-            {:read_concurrency, false},
-            {:write_concurrency, false}
+            {:read_concurrency, true},
+            {:write_concurrency, true}
           ])
     end)
     # We just return the table and let the agent just hum around owning the ETS table.
