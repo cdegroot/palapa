@@ -16,9 +16,9 @@ defmodule Boids do
   @c Boids.CirclingBehaviour
   @f Boids.FlockingBehaviour
 
-  def start_link(count \\ 100,
+  def start_link(count \\ 50,
                  initial_behaviour \\ @c,
-                 next_behaviour \\ @f) do
+                 next_behaviour \\ @c) do
     {:ok, world} = Boids.World.start_link()
     {:ok, pid} = Boids.Supervisor.start_link(world, count, initial_behaviour, next_behaviour)
     {:ok, {world, pid}}

@@ -11,7 +11,7 @@ defmodule Boids.Boid do
   @min_lifetime 2_000 # Minimum lifetime of a boid
 
   defmodule State do
-    defstruct [:world, :behaviour, :x, :y, :v, :t]
+    defstruct [:world, :behaviour, :x, :y, :v, :t, :target_t]
   end
 
   def start_link(world, initial_behaviour) do
@@ -24,23 +24,26 @@ defmodule Boids.Boid do
     v = {:rand.normal() / 5, :rand.normal() / 5}
     t = :erlang.monotonic_time(:microsecond)
     t_death = round(max(@min_lifetime, @lifetime * :rand.normal(1, 0.75)))
+    target_t = :erlang.monotonic_time(:millisecond) + @fps_sleep_ms
     send(self(), :tick)
     Process.send_after(self(), :die, t_death)
     Boids.World.add_pos(world, x, y, v)
     Process.flag(:trap_exit, true)
     IO.puts("Boid #{inspect self}: (#{x}, #{y}, #{inspect v}) scheduled to die in #{t_death}ms")
     {:ok, %State{world: world, behaviour: initial_behaviour,
-                 x: x, y: y, v: v, t: t}}
+                 x: x, y: y, v: v, t: t, target_t: target_t}}
   end
 
   def handle_info(:tick, state) do
-    Process.send_after(self(), :tick, @fps_sleep_ms)
+    cur_t = :erlang.monotonic_time(:millisecond)
+    sleep_t = max(@fps_sleep_ms - (cur_t - state.target_t), 0)
+    Process.send_after(self(), :tick, sleep_t)
     neighbours = Boids.World.get_neighbours(state.world, state.x, state.y)
     {x, y, v, t} = state.behaviour.make_move(neighbours,
       state.x, state.y, state.v, state.t)
     {x, y} = tbound(x, y)
     Boids.World.update_pos(state.world, state.x, state.y, state.v, x, y, v)
-    {:noreply, %State{state | x: x, y: y, v: v, t: t}}
+    {:noreply, %State{state | x: x, y: y, v: v, t: t, target_t: state.target_t + @fps_sleep_ms}}
   end
 
   def handle_info(:die, state) do

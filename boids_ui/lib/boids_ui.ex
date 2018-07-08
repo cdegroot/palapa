@@ -20,7 +20,7 @@ defmodule BoidsUi do
     cdecl "NVGpaint": air
     cdecl "NVGpaint": sun
 
-    air = nvgLinearGradient(vg, win_width / 2, 0, win_width / 2, win_height, nvgRGBA(0, 0, 128, 255), nvgRGBA(0, 128, 255, 255))
+    air = nvgLinearGradient(vg, win_width / 2, 0, win_width / 2, win_height, nvgRGBA(0, 64, 196, 255), nvgRGBA(0, 196, 255, 255))
     #air = nvgLinearGradient(vg, win_width / 2, 0, win_width / 2, win_height, nvgRGBA(0, 0, 128, 255), nvgRGBA(128, 64, 0, 255))
     nvgBeginPath(vg)
     nvgRect(vg, 0, 0, win_width, win_height)
