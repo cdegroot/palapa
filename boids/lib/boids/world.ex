@@ -43,13 +43,14 @@ defmodule Boids.World do
           ])
     end)
     # We just return the table and let the agent just hum around owning the ETS table.
+    # TODO cleaner ETS table ownership?
     {:ok, Agent.get(pid, & &1)}
   end
 
   @doc """
   Update position from old position to new position.
   """
-  def update_pos(world, old_x, old_y, old_v, new_x, new_y, new_v) do
+  def update_pos(world, new_x, new_y, new_v) do
     item = mkitem(new_x, new_y, new_v)
     :ets.insert(world, item)
   end
@@ -76,42 +77,46 @@ defmodule Boids.World do
   """
   def get_neighbours(world, x, y) do
     boxes = neighbouring_boxes(x, y)
-    matches = :ets.foldl(fn {id, x, y, v}, acc ->
-      if id != self() do
-        {{sx, sy}, is_within} = is_within_boxes?(boxes, x, y)
-        if is_within do
-          [{x + sx, y + sy, v} | acc]
-        else
-          acc
-        end
-      else
-        acc
-      end
-    end, [], world)
+    ms = match_spec(boxes)
+    res = :ets.select(world, ms)
+    res
   end
 
-  defp is_within_boxes?(boxes_and_shifts, x, y) do
-    bas = boxes_and_shifts
-    |> Enum.find(fn {[{xl, xh}, {yl, yh}], shift} ->
-      xl <= x and x < xh and yl <= y and y < yh
+  # Convert neighbouring boxes to ETS match specs.
+  # http://erlang.org/doc/apps/erts/match_spec.html
+  defp match_spec(boxes) do
+    # tuples in ETS are {id, x, y, v}
+    tuple = {:"$1", :"$2", :"$3", :"$4"}
+    Enum.map(boxes, fn {{xl, xh}, {yl, yh}, {xs, ys}} ->
+      condition = [{:and,
+          {:"/=", :"$1", self()},
+          {:">=", :"$2", xl},
+          {:"<", :"$2", xh},
+          {:">=", :"$3", yl},
+          {:"<", :"$3", yh}
+        }]
+      return = [{{{:+, :"$2", xs}, {:+, :"$3", ys}, :"$4"}}]
+      {tuple, condition, return}
     end)
-    case bas do
-      nil -> {{0, 0}, false}
-      {[xs, ys], shift} -> {shift, true}
-    end
   end
 
   @doc """
   Return all boids as `{x, y, v}` tuples.
   """
   def get_all(world) do
-    :ets.foldl(fn {id, x, y, v}, acc ->
-      [{x, y, v} | acc]
-    end, [], world)
+    all_ms = [{
+               {:"_", :"$1", :"$2", :"$3"},
+               [],
+               [{{:"$1", :"$2", :"$3"}}]
+               }]
+    :ets.select(world, all_ms)
   end
 
   # Private but left public for testing.
 
+  # Return the 1, 2, or 4 boxes on the [0,1] torus that are considered
+  # neighbours. It returns the lower/upper x and y coordinates, and
+  # the x and y shift values for when boxes are transposed.
   def neighbouring_boxes(x, y) do
     {x_l, x_h} = {x - @neighbourhood_radius, x + @neighbourhood_radius}
     {y_l, y_h} = {y - @neighbourhood_radius, y + @neighbourhood_radius}
@@ -131,19 +136,8 @@ defmodule Boids.World do
   defp combine_boxes(xs, ys) do
     for {xl, xh, xshift} <- xs,
         {yl, yh, yshift} <- ys do
-        {[{xl, xh}, {yl, yh}], {xshift, yshift}}
+        {{xl, xh}, {yl, yh}, {xshift, yshift}}
     end
-  end
-
-  defp geos_to_boids(geos) do
-    geos
-    |> Enum.map(&geo_to_boid/1)
-  end
-  defp geo_to_boid({:geometry, _2d, [{x, x}, {y, y}], {_boid_pid, v}}) do
-      {x, y, v}
-  end
-  defp apply_shift({x, y, v}, {dx, dy}) do
-    {x + dx, y + dy, v}
   end
 
   # Always call mkitem in the context of the caller so self() is the actual boid

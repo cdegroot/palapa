@@ -4,7 +4,6 @@ defmodule PerformanceTest do
   @grid 10 # Usually a hundred boids is sort of a reasonable max
 
   import Boids.World
-  import Boids.Math
 
   test "Timer stuff" do
     {:ok, world} = Boids.World.start_link()
@@ -33,10 +32,7 @@ defmodule PerformanceTest do
 
     {t_update, _} = :timer.tc(fn ->
       Enum.each(0..1000, fn i ->
-        {old_x, old_y} = tbound(0.49 + (i / 100), 0.49 - (i/100))
-        {new_x, new_y} = tbound(0.49 + ((i + 1) / 100), 0.49 - ((i + 1)/100))
-        update_pos(world, old_x, old_y, {0.1, 0.1},
-                          new_x, new_y, {0.1, 0.1})
+        update_pos(world, i/1000, i/1000, {0.1, 0.1})
       end)
     end)
     IO.puts("1000 updates: #{t_update}us, #{t_update/1000}us/iteration")

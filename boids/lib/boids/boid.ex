@@ -29,7 +29,7 @@ defmodule Boids.Boid do
     Process.send_after(self(), :die, t_death)
     Boids.World.add_pos(world, x, y, v)
     Process.flag(:trap_exit, true)
-    IO.puts("Boid #{inspect self}: (#{x}, #{y}, #{inspect v}) scheduled to die in #{t_death}ms")
+    IO.puts("Boid #{inspect self()}: (#{x}, #{y}, #{inspect v}) scheduled to die in #{t_death}ms")
     {:ok, %State{world: world, behaviour: initial_behaviour,
                  x: x, y: y, v: v, t: t, target_t: target_t}}
   end
@@ -42,7 +42,7 @@ defmodule Boids.Boid do
     {x, y, v, t} = state.behaviour.make_move(neighbours,
       state.x, state.y, state.v, state.t)
     {x, y} = tbound(x, y)
-    Boids.World.update_pos(state.world, state.x, state.y, state.v, x, y, v)
+    Boids.World.update_pos(state.world, x, y, v)
     {:noreply, %State{state | x: x, y: y, v: v, t: t, target_t: state.target_t + @fps_sleep_ms}}
   end
 

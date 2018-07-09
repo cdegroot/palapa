@@ -19,6 +19,5 @@ defmodule Boids.Math do
 
   @doc "Keep coordinates on a torus"
   def tbound(v), do: v - Float.floor(v)
-
   def tbound(x, y), do: {tbound(x), tbound(y)}
 end
