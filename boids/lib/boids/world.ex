@@ -10,20 +10,8 @@ defmodule Boids.World do
 
   Implementation notes: initially, I started using an r-tree library but I wasn't
   super happy about the result. A plain ETS table with a full table scan for fetches
-  turned out to be quicker. On my 2011 MBP, the fetch is around 56us and an update -
-  which was quite slow in the r-tree version - is only 22us.
-
-  Interestingly enough, the "boid" behaviour - all the scary math stuff - only takes 7us
-  meaning that this module is the bottleneck in two ways: it's slowest linearly, and it's the
-  shared mutable state. Some ideas:
-  * Use 100 genservers on a grid each responsible for a 0.1x0.1 area keeping data in a Map. a
-    Map insert however seems to be slower than an ETS insert.
-  * Use multiple ETS tables so we don't need to loop through 100 entries, sort of poor man's
-    tree. However, unless you go to silly fine-grained tables, most boids flock together so
-    you're probably still looking at most entries.
-  * Probably a nice jump in performance: move from `foldl` to at least pre-selecting most
-    neighbours with `match`. Match specifications run inside the BIF bits of ETS so should
-    be quite a bit faster than looping with `fold`
+  turned out to be quicker. Especially using match specifications, the ETS was
+  much faster.
   """
 
   # TODO filter out dead processes as we cannot always guarantee boids delete themselves?
@@ -89,11 +77,11 @@ defmodule Boids.World do
     tuple = {:"$1", :"$2", :"$3", :"$4"}
     Enum.map(boxes, fn {{xl, xh}, {yl, yh}, {xs, ys}} ->
       condition = [{:and,
-          {:"/=", :"$1", self()},
           {:">=", :"$2", xl},
           {:"<", :"$2", xh},
           {:">=", :"$3", yl},
-          {:"<", :"$3", yh}
+          {:"<", :"$3", yh},
+          {:"/=", :"$1", self()}
         }]
       return = [{{{:+, :"$2", xs}, {:+, :"$3", ys}, :"$4"}}]
       {tuple, condition, return}
