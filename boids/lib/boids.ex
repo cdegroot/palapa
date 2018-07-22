@@ -18,7 +18,7 @@ defmodule Boids do
 
   def start_link(count \\ 50,
                  initial_behaviour \\ @c,
-                 next_behaviour \\ @c) do
+                 next_behaviour \\ @f) do
     {:ok, world} = Boids.World.start_link()
     {:ok, pid} = Boids.Supervisor.start_link(world, count, initial_behaviour, next_behaviour)
     {:ok, {world, pid}}
