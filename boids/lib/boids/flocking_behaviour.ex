@@ -16,6 +16,8 @@ defmodule Boids.FlockingBehaviour do
   @r2_min_dist 0.05 # When we consider a boid "too close"
   @r3_adj 4         # The larger this is, the slower boids match velocity
 
+  @vmax 0.2
+
   @doc """
   Calculate a single move. Called by a boid that wants to update its position. It
   passes the previous time it made a move so that we can make precise adjustments
@@ -27,7 +29,7 @@ defmodule Boids.FlockingBehaviour do
     v1 = vmul(t_fraction, rule_one(neighbours, my_x, my_y))
     v2 = vmul(t_fraction, rule_two(neighbours, my_x, my_y))
     v3 = vmul(t_fraction, rule_three(neighbours, my_v))
-    new_v = vsum([my_v, v1, v2, v3])
+    new_v = [my_v, v1, v2, v3] |> vsum() |> vmax(@vmax)
     #if {v1, v2, v3} != {{0.0,0.0},{0.0,0.0},{0.0,0.0}} do
       #IO.puts("#{t_fraction}: #{inspect my_v} + #{inspect v1},#{inspect v2},#{inspect v3} => #{inspect new_v}")
     #end

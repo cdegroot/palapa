@@ -133,9 +133,4 @@ defmodule Boids.World do
   defp mkitem(x, y, v, id \\ self()) do
     {id, x, y, v}
   end
-
-  # For testing/debugging
-  def get_tree(world) do
-    Agent.get(world, fn tree -> tree end)
-  end
 end

@@ -20,4 +20,15 @@ defmodule Boids.Math do
   @doc "Keep coordinates on a torus"
   def tbound(v), do: v - Float.floor(v)
   def tbound(x, y), do: {tbound(x), tbound(y)}
+
+  @doc "Limit vector to a maximum size"
+  def vmax({x, y}, max) do
+    size = :math.sqrt((x * x) + (y * y))
+    if size > max do
+      reduction = size / max
+      {x / reduction, y / reduction}
+    else
+      {x, y}
+    end
+  end
 end

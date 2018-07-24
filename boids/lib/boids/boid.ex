@@ -10,6 +10,8 @@ defmodule Boids.Boid do
   @lifetime 60_000 # Expected lifetime of a boid, in milliseconds
   @min_lifetime 2_000 # Minimum lifetime of a boid
 
+  @vmax 0.2 # Max initial velocity
+
   defmodule State do
     defstruct [:world, :behaviour, :x, :y, :v, :t, :target_t]
   end
@@ -21,7 +23,7 @@ defmodule Boids.Boid do
   def init({world, initial_behaviour}) do
     x = :rand.uniform()
     y = :rand.uniform()
-    v = {:rand.normal() / 5, :rand.normal() / 5}
+    v = {:rand.normal() / 5, :rand.normal() / 5} |> vmax(@vmax)
     t = :erlang.monotonic_time(:microsecond)
     t_death = round(max(@min_lifetime, @lifetime * :rand.normal(1, 0.75)))
     target_t = :erlang.monotonic_time(:millisecond) + @fps_sleep_ms
