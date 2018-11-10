@@ -18,6 +18,7 @@ test:
 # `test` here is to make sure we always exit 0 whether */.tool-versions
 # exists or not.
 setup:
+	docker-compose up -d
 	asdf install
 	mix local.hex --force --if-missing
 	mix local.rebar --force
