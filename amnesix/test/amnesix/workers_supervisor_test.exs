@@ -36,6 +36,9 @@ defmodule Amnesix.WorkersSupervisorTest do
       GenServer.call(pid, {:process_message, key, value})
       :ok
     end
+    def init(args) do
+      {:ok, args}
+    end
     def handle_call(msg, _from, state = {persister, _, partition}) do
       MockPersister.tell_test(persister, {:pw, partition, msg} )
       {:reply, :ok, state}

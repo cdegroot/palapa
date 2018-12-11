@@ -17,7 +17,6 @@ defmodule Amnesix.Mixfile do
   end
 
   defp deps do
-    [{:brod, "~> 2.2"},
-     {:simpler, path: "../simpler"}]
+    [{:brod, "~> 3.7.2"}]
   end
 end

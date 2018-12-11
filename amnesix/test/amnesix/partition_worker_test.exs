@@ -32,6 +32,9 @@ defmodule Amnesix.PartitionWorkerTest do
     def schedule_work(pid, work) do
       GenServer.call(pid, {:schedule_work, work})
     end
+    def init(args) do
+      {:ok, args}
+    end
     def handle_call(msg, _from, state = {persister, key}) do
       MockPersister.tell_test(persister, {:kw, key, msg})
       {:reply, :ok, state}
