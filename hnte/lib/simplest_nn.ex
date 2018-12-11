@@ -4,6 +4,12 @@ defmodule Hnte.SimplestNn do
   # thing to do, but I feel it's sensible as it keeps code understandable by
   # staying close to standard, OTP-loving, Elixir
 
+  defmodule Node do
+    def input(neuron, values) do
+      GenServer.cast(neuron, {:input, values})
+    end
+  end
+
   defmodule Neuron do
     use GenServer
     require Logger
@@ -18,9 +24,6 @@ defmodule Hnte.SimplestNn do
 
     def connect(neuron, input, output) do
       GenServer.cast(neuron, {:connect, input, output})
-    end
-    def input(neuron, values) do
-      GenServer.cast(neuron, {:input, values})
     end
 
     def init([]) do
@@ -38,7 +41,7 @@ defmodule Hnte.SimplestNn do
       dot_product = dot(values, state.weights, 0)
       output = [:math.tanh(dot_product)]
       Logger.info("Output: #{inspect output}")
-      Hnte.SimplestNn.Actuator.input(state.output, output)
+      Hnte.SimplestNn.Node.input(state.output, output)
       {:noreply, state}
     end
 
@@ -57,9 +60,6 @@ defmodule Hnte.SimplestNn do
 
     def start_link(neuron) do
       GenServer.start_link(__MODULE__, neuron)
-    end
-    def input(actuator, values) do
-      GenServer.cast(actuator, {:input, values})
     end
 
     def init(neuron) do
@@ -89,7 +89,7 @@ defmodule Hnte.SimplestNn do
     def handle_cast(:trigger, state) do
       sensed_values = Enum.map(1..2, fn _ -> :rand.uniform() end)
       Logger.info("Sensor sensed #{inspect sensed_values}")
-      Hnte.SimplestNn.Neuron.input(state, sensed_values)
+      Hnte.SimplestNn.Node.input(state, sensed_values)
       {:noreply, state}
     end
   end
