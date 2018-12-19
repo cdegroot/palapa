@@ -17,16 +17,22 @@ defmodule Hnte.Constructor do
     actuator = make_actuator(actuator_id, actuator_module)
     layer_densities = layers_spec ++ [actuator.vl]
     neurons = make_neurons(cortex_id, sensor, actuator, layer_densities)
-    cortex = "TODO MAKE CORTEX"
+    neuron_ids = neurons
+    |> List.flatten()
+    |> Enum.map(fn neuron -> neuron.id end)
+    cortex = %{type: :cortex, id: cortex_id,
+               sensor_ids: [sensor_id],
+               actuator_ids: [actuator_id],
+               neuron_ids: neuron_ids}
 
     statements = quote do
       defmodule unquote(module_name) do
         def genotype() do
           [
+            unquote(cortex),
             unquote(sensor),
             unquote_splicing(neurons),
-            unquote(actuator),
-            unquote(cortex)
+            unquote(actuator)
           ]
         end
       end
@@ -44,6 +50,7 @@ defmodule Hnte.Constructor do
     %{type: :actuator, id: id, module: module, vl: vl}
   end
 
+  # Entry point of all the make_neurons functions.
   def make_neurons(cortex_id, sensor, actuator, layer_densities) do
     input_idps = [{sensor.id, sensor.vl}]
     tot_layers = length(layer_densities)
@@ -54,7 +61,7 @@ defmodule Hnte.Constructor do
 
   def make_neurons(cortex_id, actuator_id, layer_index, tot_layers, input_idps, nids,
                [next_ld | lds], acc) do
-    output_nids = make_nids(next_ld, layer_index)
+    output_nids = make_nids(next_ld, layer_index + 1)
     layer_neurons = make_neurons(cortex_id, input_idps, nids, output_nids, [])
     next_input_idps = Enum.map(nids, fn nid -> {nid, 1} end)
     make_neurons(cortex_id, actuator_id, layer_index + 1, tot_layers, next_input_idps,
@@ -76,7 +83,7 @@ defmodule Hnte.Constructor do
     acc
   end
 
-  def make_neuron(input_idps, id, cortex_id, output_ids) do
+  def make_neuron(input_idps, id, _cortex_id, output_ids) do
     inputs = Enum.map(input_idps, fn {input_id, input_vl} ->
       weights = Enum.map(1..input_vl, fn _ -> :rand.uniform() - 0.5 end)
       {input_id, weights}
