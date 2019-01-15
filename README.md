@@ -12,8 +12,7 @@ The name comes from a previous iteration of this repository, as one
 giant umbrella. I've since moved it to a "poncho" style repository
 but I like the picture too much so I'm keeping the name. 
 
-![Nice Picture Of A Palapa I Found On The Interwebs](https://nyxonenterprises.files.wordpress.com/2012
-/05/jacky_li_beach_palapa_hires.jpg)
+![Nice Picture Of A Palapa I Found On The Interwebs](https://nyxonenterprises.files.wordpress.com/2012/05/jacky_li_beach_palapa_hires.jpg)
 
 
 ## Stuff in here
