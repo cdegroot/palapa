@@ -7,6 +7,7 @@ defmodule ExobeeTest do
 
   test "Can fetch current temp" do
     list = Exobee.Thermostat.list()
+    IO.inspect list
     assert length(list) == 1
   end
 end
