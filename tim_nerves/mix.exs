@@ -48,6 +48,7 @@ defmodule TimNerves.MixProject do
     ] ++ system(target)
   end
 
-  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0.4", runtime: false}]
+  #defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, "~> 1.0.4", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3_tftfb, path: "../../nerves_system_rpi3_tftfb", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 end

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 
 if [[ -z "$START_TIMEOUT" ]]; then
     START_TIMEOUT=600
@@ -36,3 +37,5 @@ if [[ -n $KAFKA_CREATE_TOPICS ]]; then
         fi
     done
 fi
+
+touch /var/run/topics-created
