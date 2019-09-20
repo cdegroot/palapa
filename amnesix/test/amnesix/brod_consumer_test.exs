@@ -36,7 +36,7 @@ defmodule Amnesix.BrodConsumerTest do
       :remove ->
         Logger.debug("Got remove, retrying")
         assert_partitions_eventually_load()
-      {:load, [0, 1]} ->
+      {:load, _partitions} ->
         Logger.debug("Got load, all good")
         :ok
     after

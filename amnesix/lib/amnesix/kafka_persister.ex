@@ -64,15 +64,15 @@ defmodule Amnesix.KafkaPersister do
   # Private stuff
 
   defp load_part(partition, callback_fn, state) do
-    {:ok, [earliest]} = :brod.get_offsets(state.brokers, state.journal_topic, partition, :earliest, 1)
-    {:ok, [latest]} = :brod.get_offsets(state.brokers, state.journal_topic, partition, :latest, 1)
+    {:ok, earliest} = :brod.resolve_offset(state.brokers, state.journal_topic, partition, :earliest)
+    {:ok, latest} = :brod.resolve_offset(state.brokers, state.journal_topic, partition, :latest)
     Logger.info("Fetching offests for partition #{partition} from #{inspect earliest} to #{inspect latest}")
     fetch_set(partition, callback_fn, earliest, latest, state)
   end
 
   defp fetch_set(partition, callback_fn, earliest, latest, state) when earliest < latest do
     Logger.info("fetch set #{inspect state}, #{inspect partition}, #{inspect earliest}")
-    {:ok, message_set} = :brod.fetch(state.brokers, state.journal_topic, partition, earliest)
+    {:ok, {_offset, message_set}} = :brod.fetch(state.brokers, state.journal_topic, partition, earliest)
     latest_offset_seen =
       message_set
       |> parse_kafka_message_set
@@ -88,7 +88,7 @@ defmodule Amnesix.KafkaPersister do
   defp parse_kafka_message_set(message_set) do
     message_set
     |> Enum.map(fn(message) ->
-      {:kafka_message, offset, _magic, _attrs, key, value, _crc} = message
+      {:kafka_message, offset, key, value, _ts_type, _ts, _headers} = message
       {offset, key, value}
     end)
   end
