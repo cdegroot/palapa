@@ -10,7 +10,7 @@ defmodule UiWeb.Live.FanLive do
     ~L"""
     <div style="font-size: 20px; text-align: center">Current furnace fan state: <%= @toggle %></div>
     <br/>
-    <div phx-click="toggle" style="font-size: 60px; border: 2px solid; text-align: center">Switch <%= @switch %> </div>
+    <div phx-click="toggle" style="font-size: 60px; border: 2px solid; border-radius: 25px; text-align: center">Switch <%= @switch %> </div>
     """
   end
 

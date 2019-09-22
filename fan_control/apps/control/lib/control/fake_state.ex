@@ -1,4 +1,4 @@
-defmodule Control.State do
+defmodule Control.FakeState do
   require Logger
   use Agent
 
