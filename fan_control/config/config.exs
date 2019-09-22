@@ -1,18 +1,42 @@
-# This file is responsible for configuring your umbrella
-# and **all applications** and their dependencies with the
-# help of the Config module.
+# This file is responsible for configuring your application
+# and its dependencies with the aid of the Mix.Config module.
 #
-# Note that all applications in your umbrella share the
-# same configuration and dependencies, which is why they
-# all use the same configuration file. If you want different
-# configurations or dependencies per app, it is best to
-# move said applications out of the umbrella.
-import Config
+# This configuration file is loaded before any dependency and
+# is restricted to this project.
 
-# Sample configuration:
-#
-#     config :logger, :console,
-#       level: :info,
-#       format: "$date $time [$level] $metadata$message\n",
-#       metadata: [:user_id]
-#
+# General application configuration
+use Mix.Config
+
+# Configures the endpoint
+config :ui, UiWeb.Endpoint,
+  url: [host: "localhost"],
+  secret_key_base: "qnfGtBhwJQN4RhfU98CBUQtcuR4OqVLyq6C0YO8+GmAZOdM07G10En38I9a3oyJf",
+  render_errors: [view: UiWeb.ErrorView, accepts: ~w(html json)],
+  pubsub: [name: Ui.PubSub, adapter: Phoenix.PubSub.PG2]
+
+# Configures Elixir's Logger
+config :logger,
+  backends: [RingLogger],
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
+
+# Use Jason for JSON parsing in Phoenix
+config :phoenix, :json_library, Jason
+
+config :firmware, target: Mix.target()
+
+config :shoehorn,
+  init: [:nerves_runtime, :nerves_init_gadget],
+  app: Mix.Project.config()[:app]
+
+config :nerves, :firmware, rootfs_overlay: "rootfs_overlay"
+
+# Use shoehorn to start the main application. See the shoehorn
+# docs for separating out critical OTP applications such as those
+# involved with firmware updates.
+
+import_config "#{Mix.env()}.exs"
+
+if Mix.target() != :host do
+  import_config "target.exs"
+end
