@@ -10,7 +10,7 @@ defmodule Control.State do
     Agent.get(__MODULE__, fn state -> state end)
   end
 
-  def set_state do
+  def toggle do
     Agent.update(__MODULE__, fn state -> not state end)
   end
 end
