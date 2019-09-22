@@ -1,6 +1,8 @@
 defmodule UiWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ui
 
+  socket "/live", Phoenix.LiveView.Socket
+
   socket "/socket", UiWeb.UserSocket,
     websocket: true,
     longpoll: false
@@ -40,7 +42,7 @@ defmodule UiWeb.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_ui_key",
-    signing_salt: "lL/J6y27"
+    signing_salt: "53KEaRY8"
 
   plug UiWeb.Router
 end
