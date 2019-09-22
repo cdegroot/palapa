@@ -1,2 +1,15 @@
-elixir 1.8.1-otp-21
-erlang 21.2
+adr-tools 3.0.0
+consul 1.4.2
+nomad 0.8.7
+elixir 1.9.1-otp-22
+erlang 22.0.7
+julia 1.2.0
+lua 5.3.5
+nodejs 12.10.0
+python 3.7.4
+racket 7.4
+rebar 3.11.1
+ruby 2.6.4
+java oracle-8.141
+golang 1.13
+sbt 0.13.9
