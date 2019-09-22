@@ -18,10 +18,14 @@ config :ui, UiWeb.Endpoint,
   ]
 
 # Configures Elixir's Logger
-config :logger,
-  backends: [RingLogger],
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+if Mix.target() == :host do
+  config :logger, :console,
+    format: "$time $metadata[$level] $message\n",
+    metadata: [:request_id]
+else
+  config :logger,
+    backends: [RingLogger]
+end
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

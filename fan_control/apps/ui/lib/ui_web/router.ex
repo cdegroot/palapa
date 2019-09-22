@@ -17,7 +17,7 @@ defmodule UiWeb.Router do
   scope "/", UiWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    live "/", Live.FanLive
   end
 
   # Other scopes may use custom stacks.

@@ -49,10 +49,7 @@ config :ui, UiWeb.Endpoint,
 config :ui, UiWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/ui_web/{live,views}/.*(ex)$",
-      ~r"lib/ui_web/templates/.*(eex)$"
+      ~r"/fan_control/"
     ]
   ]
 

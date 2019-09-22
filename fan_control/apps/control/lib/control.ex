@@ -1,18 +1,4 @@
 defmodule Control do
-  @moduledoc """
-  Documentation for Control.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Control.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  defdelegate get_state, to: Control.State
+  defdelegate set_state, to: Control.State
 end
