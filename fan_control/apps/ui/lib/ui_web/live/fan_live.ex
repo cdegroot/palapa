@@ -3,11 +3,14 @@ defmodule UiWeb.Live.FanLive do
 
   require Logger
 
+  @translate %{false: "off", true: "on"}
+
   def render(assigns) do
+    Logger.debug("Render, assigns=#{inspect assigns}")
     ~L"""
-    Current state: <%= @toggle %>
+    <div style="font-size: 20px; text-align: center">Current furnace fan state: <%= @toggle %></div>
     <br/>
-    <div phx-click="toggle">Toggle</div>
+    <div phx-click="toggle" style="font-size: 60px; border: 2px solid; text-align: center">Switch <%= @switch %> </div>
     """
   end
 
@@ -27,6 +30,8 @@ defmodule UiWeb.Live.FanLive do
   end
 
   defp assign_toggle(socket) do
-    assign(socket, :toggle, Control.get_state())
+    socket
+    |> assign(:toggle, Map.get(@translate, Control.get_state()))
+    |> assign(:switch, Map.get(@translate, not Control.get_state()))
   end
 end
