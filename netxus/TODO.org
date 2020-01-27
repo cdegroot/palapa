@@ -1,0 +1,9 @@
+* TODO Network Data Gathering
+** TODO Arp collection
+** TODO IP6 neighbour collection
+* TODO Network Data disclosure
+** TODO DNS server
+
+
+;; don't delete these lines
+saved org fold info: (0 1 2 3 4)
