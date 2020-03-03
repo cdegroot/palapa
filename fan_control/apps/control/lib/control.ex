@@ -1,9 +1,11 @@
 defmodule Control do
   if Mix.target == :host do
-    defdelegate get_state, to: Control.FakeState
-    defdelegate toggle, to: Control.FakeState
+    @control_module Control.FakeState
   else
-    defdelegate get_state, to: Control.GpioState
-    defdelegate toggle, to: Control.GpioState
+    @control_module Control.GpioState
   end
+  def control_module, do: @control_module
+
+  defdelegate get_state, to: @control_module
+  defdelegate toggle, to: @control_module
 end
